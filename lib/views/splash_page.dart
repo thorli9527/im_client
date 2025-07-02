@@ -1,5 +1,6 @@
-// lib/views/splash_page.dart
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:im_client/services/app_config_service.dart';
@@ -14,7 +15,7 @@ class SplashPage extends StatefulWidget {
 class _SplashPageState extends State<SplashPage> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  late Timer _timer;
+  Timer? _timer;
 
   final List<String> _images = [
     'assets/images/logo_a.jpg',
@@ -26,7 +27,13 @@ class _SplashPageState extends State<SplashPage> {
   void initState() {
     super.initState();
 
-    // 图片轮播：每 1 秒切换一次
+    // 桌面平台直接跳转
+    if (isDesktopPlatform()) {
+      Future.delayed(Duration.zero, _navigateToNext);
+      return;
+    }
+
+    // 移动平台播放图片轮播
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_currentPage < _images.length - 1) {
         _currentPage++;
@@ -36,7 +43,7 @@ class _SplashPageState extends State<SplashPage> {
           curve: Curves.easeInOut,
         );
       } else {
-        _timer.cancel(); // 取消定时器
+        _timer?.cancel();
         _navigateToNext();
       }
     });
@@ -45,12 +52,20 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void dispose() {
     _pageController.dispose();
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // 桌面平台不显示界面
+    if (isDesktopPlatform()) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: SizedBox.shrink(),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -76,10 +91,21 @@ class _SplashPageState extends State<SplashPage> {
     final appConfig = Get.find<AppConfigService>();
     final isLoggedIn = await appConfig.isLoggedIn();
 
-    if (isLoggedIn) {
-      Get.offAllNamed('/home');
+    if (isMobilePlatform()) {
+      Get.offAllNamed(isLoggedIn ? '/home' : '/');
     } else {
-      Get.offAllNamed('/login'); // ✅ 改为登录页
+      Get.offAllNamed(isLoggedIn ? '/home' : '/login');
     }
+  }
+
+  bool isMobilePlatform() {
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+  }
+
+  bool isDesktopPlatform() {
+    return defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux;
   }
 }
