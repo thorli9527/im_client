@@ -11,6 +11,15 @@ class ApiService {
       contentType: 'application/json',
       responseType: ResponseType.json,
     ),
+  )..interceptors.add(
+    LogInterceptor(
+      request: true,
+      requestBody: true,
+      responseHeader: false,
+      responseBody: true,
+      error: true,
+      logPrint: print, // 可替换为 logger.i
+    ),
   );
 
   /// 通用 POST 请求

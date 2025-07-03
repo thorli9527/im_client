@@ -102,7 +102,7 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
                         ),
                         validator: FormBuilderValidators.compose([
                           FormBuilderValidators.required(),
-                          FormBuilderValidators.minLength(3),
+                          FormBuilderValidators.minLength(2),
                         ]),
                       ),
                       const SizedBox(height: 16),

@@ -20,13 +20,14 @@ class UserService {
       data: {
         'username': username,
         'password': password,
+        "deviceType": "Desktop",
         'appKey': AppConfig.appKey,
       },
       fromJsonT: (json) => LoginResponse.fromJson(json),
     );
 
     final login = response.data;
-    if (response.code != 200 || login == null) {
+    if (response.success==false|| login == null) {
       throw Exception('登录失败：${response.message}');
     }
 
