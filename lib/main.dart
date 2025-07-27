@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_auth/shared/constants.dart';
 import 'auth/welcome/welcome_screen.dart';
+import 'shared/window_manager_service.dart';
 
-void main() => runApp(const MyApp());
+void main() async {
+  // 确保初始化完成
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化窗口管理器
+  await WindowManagerService.init();
+
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
