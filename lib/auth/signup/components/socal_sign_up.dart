@@ -1,7 +1,7 @@
 // import 'package:flutter/material.dart';
 
-// import '../../../screens/Signup/components/or_divider.dart';
-// import '../../../screens/Signup/components/social_icon.dart';
+// import '../../../screens/signup/components/or_divider.dart';
+// import '../../../screens/signup/components/social_icon.dart';
 
 // class SocalSignUp extends StatelessWidget {
 //   const SocalSignUp({

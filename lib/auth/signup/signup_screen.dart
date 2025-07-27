@@ -1,35 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_auth/responsive.dart';
+import '../../shared/constants.dart';
+import '../components/background.dart';
+import 'components/sign_up_top_image.dart';
+import 'components/signup_form.dart';
 
-import '../../components/background.dart';
-import 'components/login_form.dart';
-import 'components/login_screen_top_image.dart';
-
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class SignUpScreen extends StatelessWidget {
+  const SignUpScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return const Background(
       child: SingleChildScrollView(
         child: Responsive(
-          mobile: MobileLoginScreen(),
+          mobile: MobileSignupScreen(),
           desktop: Row(
             children: [
               Expanded(
-                child: LoginScreenTopImage(),
+                child: SignUpScreenTopImage(),
               ),
               Expanded(
-                child: Row(
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
                       width: 450,
-                      child: LoginForm(),
+                      child: SignUpForm(),
                     ),
+                    SizedBox(height: defaultPadding / 2),
+                    // SocalSignUp()
                   ],
                 ),
-              ),
+              )
             ],
           ),
         ),
@@ -38,8 +40,8 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-class MobileLoginScreen extends StatelessWidget {
-  const MobileLoginScreen({
+class MobileSignupScreen extends StatelessWidget {
+  const MobileSignupScreen({
     Key? key,
   }) : super(key: key);
 
@@ -48,17 +50,18 @@ class MobileLoginScreen extends StatelessWidget {
     return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        LoginScreenTopImage(),
+        SignUpScreenTopImage(),
         Row(
           children: [
             Spacer(),
             Expanded(
               flex: 8,
-              child: LoginForm(),
+              child: SignUpForm(),
             ),
             Spacer(),
           ],
         ),
+        // const SocalSignUp()
       ],
     );
   }

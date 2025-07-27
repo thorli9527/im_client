@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../constants.dart';
+import '../../../shared/constants.dart';
 
-class WelcomeImage extends StatelessWidget {
-  const WelcomeImage({
+
+class LoginScreenTopImage extends StatelessWidget {
+  const LoginScreenTopImage({
     Key? key,
   }) : super(key: key);
 
@@ -13,7 +14,7 @@ class WelcomeImage extends StatelessWidget {
     return Column(
       children: [
         const Text(
-          "WELCOME TO EDU",
+          "LOGIN",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: defaultPadding * 2),
@@ -22,9 +23,7 @@ class WelcomeImage extends StatelessWidget {
             const Spacer(),
             Expanded(
               flex: 8,
-              child: SvgPicture.asset(
-                "assets/icons/chat.svg",
-              ),
+              child: SvgPicture.asset("assets/icons/login.svg"),
             ),
             const Spacer(),
           ],
