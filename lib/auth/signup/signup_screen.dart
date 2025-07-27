@@ -37,26 +37,22 @@ class DesktopSignupScreenWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const DesktopBackground(
-      child: SingleChildScrollView(
-        child: Row(
-          children: [
-            Expanded(
-              child: SignUpScreenTopImage(),
-            ),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 450,
-                    child: SignUpForm(),
-                  ),
-                  SizedBox(height: defaultPadding / 2),
-                ],
+      child: Row(
+        children: [
+          Expanded(
+            child: SignUpScreenTopImage(),
+          ),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: SizedBox(
+                  width: 450,
+                  child: SignUpForm(),
+                ),
               ),
-            )
-          ],
-        ),
+            ),
+          )
+        ],
       ),
     );
   }

@@ -38,27 +38,24 @@ class DesktopWelcomeScreenWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const DesktopBackground(
-      child: SingleChildScrollView(
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Expanded(
-                child: WelcomeImage(),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 450,
-                      child: LoginAndSignupBtn(),
-                    ),
-                  ],
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Expanded(
+              child: WelcomeImage(),
+            ),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: SizedBox(
+                    width: 450,
+                    child: LoginAndSignupBtn(),
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

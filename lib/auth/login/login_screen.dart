@@ -37,25 +37,22 @@ class DesktopLoginScreenWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const DesktopBackground(
-      child: SingleChildScrollView(
-        child: Row(
-          children: [
-            Expanded(
-              child: LoginScreenTopImage(),
-            ),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 450,
-                    child: LoginForm(),
-                  ),
-                ],
+      child: Row(
+        children: [
+          Expanded(
+            child: LoginScreenTopImage(),
+          ),
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                child: SizedBox(
+                  width: 450,
+                  child: LoginForm(),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
