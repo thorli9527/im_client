@@ -30,16 +30,17 @@ class Background extends StatelessWidget {
                 width: 120,
               ),
             ),
-            // 顶部添加可拖拽区域和窗口控制按钮
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 40,
-              child: WindowControls(),
-            ),
+            // 顶部添加可拖拽区域和窗口控制按钮 (只在桌面端显示)
+            if (MediaQuery.of(context).size.width > 992)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 40,
+                child: WindowControls(),
+              ),
             SafeArea(
-              top: false, // 禁用默认的顶部安全区域
+              top: MediaQuery.of(context).size.width <= 992, // 移动端保留顶部安全区域
               child: child,
             ),
           ],

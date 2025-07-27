@@ -35,38 +35,46 @@ class _WindowControlsState extends State<WindowControls> with WindowListener {
     return Row(
       children: [
         // 添加可拖拽区域
-        GestureDetector(
-          onPanStart: (details) {
-            windowManager.startDragging();
-          },
-          child: Container(
-            width: 100,
-            height: 30,
-            color: Colors.transparent,
+        Expanded(
+          child: GestureDetector(
+            onPanStart: (details) {
+              windowManager.startDragging();
+            },
+            child: Container(
+              color: Colors.transparent,
+            ),
           ),
         ),
-        const Spacer(),
         IconButton(
           onPressed: () => windowManager.minimize(),
           icon: const Icon(Icons.minimize, size: 16),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
+          style: IconButton.styleFrom(
+            shape: const CircleBorder(),
+          ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         IconButton(
           onPressed: () => windowManager.maximize(),
-          icon: const Icon(Icons.check_box_outline_blank, size: 14),
+          icon: const Icon(Icons.crop_square, size: 14),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
+          style: IconButton.styleFrom(
+            shape: const CircleBorder(),
+          ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         IconButton(
           onPressed: () => windowManager.close(),
           icon: const Icon(Icons.close, size: 16),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
+          style: IconButton.styleFrom(
+            shape: const CircleBorder(),
+          ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 16),
       ],
     );
   }

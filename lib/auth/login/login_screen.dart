@@ -14,14 +14,13 @@ class LoginScreen extends StatelessWidget {
       child: SingleChildScrollView(
         child: Responsive(
           mobile: MobileLoginScreen(),
-          desktop: DesktopLoginScreen(), // 修改这里
+          desktop: DesktopLoginScreen(),
         ),
       ),
     );
   }
 }
 
-// 新增桌面端布局组件
 class DesktopLoginScreen extends StatelessWidget {
   const DesktopLoginScreen({Key? key}) : super(key: key);
 
@@ -29,7 +28,7 @@ class DesktopLoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: SizedBox(
-        width: 450, // 保持固定宽度以确保在大屏幕上仍然美观
+        width: 450,
         child: LoginForm(),
       ),
     );
@@ -47,15 +46,18 @@ class MobileLoginScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         LoginScreenTopImage(),
-        Row(
-          children: [
-            Spacer(),
-            Expanded(
-              flex: 8,
-              child: LoginForm(),
-            ),
-            Spacer(),
-          ],
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Spacer(),
+              Expanded(
+                flex: 8,
+                child: LoginForm(),
+              ),
+              Spacer(),
+            ],
+          ),
         ),
       ],
     );
