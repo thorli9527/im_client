@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../responsive.dart';
 import '../components/background.dart';
+import '../components/desktop_background.dart';
 import 'components/login_signup_btn.dart';
 import 'components/welcome_image.dart';
 
@@ -9,28 +10,56 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const Responsive(
+      mobile: MobileWelcomeScreenWrapper(),
+      desktop: DesktopWelcomeScreenWrapper(),
+    );
+  }
+}
+
+class MobileWelcomeScreenWrapper extends StatelessWidget {
+  const MobileWelcomeScreenWrapper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return const Background(
       child: SingleChildScrollView(
         child: SafeArea(
-          child: Responsive(
-            desktop: DesktopWelcomeScreen(),
-            mobile: MobileWelcomeScreen(),
-          ),
+          child: MobileWelcomeScreen(),
         ),
       ),
     );
   }
 }
 
-class DesktopWelcomeScreen extends StatelessWidget {
-  const DesktopWelcomeScreen({Key? key}) : super(key: key);
+class DesktopWelcomeScreenWrapper extends StatelessWidget {
+  const DesktopWelcomeScreenWrapper({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: SizedBox(
-        width: 450,
-        child: LoginAndSignupBtn(),
+    return const DesktopBackground(
+      child: SingleChildScrollView(
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Expanded(
+                child: WelcomeImage(),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 450,
+                      child: LoginAndSignupBtn(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -47,18 +76,15 @@ class MobileWelcomeScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         WelcomeImage(),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Spacer(),
-              Expanded(
-                flex: 8,
-                child: LoginAndSignupBtn(),
-              ),
-              Spacer(),
-            ],
-          ),
+        Row(
+          children: [
+            Spacer(),
+            Expanded(
+              flex: 8,
+              child: LoginAndSignupBtn(),
+            ),
+            Spacer(),
+          ],
         ),
       ],
     );

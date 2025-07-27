@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_auth/responsive.dart';
 import '../../shared/constants.dart';
 import '../components/background.dart';
+import '../components/desktop_background.dart';
 import 'components/sign_up_top_image.dart';
 import 'components/signup_form.dart';
 
@@ -10,26 +11,52 @@ class SignUpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const Responsive(
+      mobile: MobileSignupScreenWrapper(),
+      desktop: DesktopSignupScreenWrapper(),
+    );
+  }
+}
+
+class MobileSignupScreenWrapper extends StatelessWidget {
+  const MobileSignupScreenWrapper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return const Background(
       child: SingleChildScrollView(
-        child: Responsive(
-          mobile: MobileSignupScreen(),
-          desktop: DesktopSignupScreen(),
-        ),
+        child: MobileSignupScreen(),
       ),
     );
   }
 }
 
-class DesktopSignupScreen extends StatelessWidget {
-  const DesktopSignupScreen({Key? key}) : super(key: key);
+class DesktopSignupScreenWrapper extends StatelessWidget {
+  const DesktopSignupScreenWrapper({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: SizedBox(
-        width: 450,
-        child: SignUpForm(),
+    return const DesktopBackground(
+      child: SingleChildScrollView(
+        child: Row(
+          children: [
+            Expanded(
+              child: SignUpScreenTopImage(),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 450,
+                    child: SignUpForm(),
+                  ),
+                  SizedBox(height: defaultPadding / 2),
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -46,18 +73,15 @@ class MobileSignupScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         SignUpScreenTopImage(),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Spacer(),
-              Expanded(
-                flex: 8,
-                child: SignUpForm(),
-              ),
-              Spacer(),
-            ],
-          ),
+        Row(
+          children: [
+            Spacer(),
+            Expanded(
+              flex: 8,
+              child: SignUpForm(),
+            ),
+            Spacer(),
+          ],
         ),
       ],
     );
