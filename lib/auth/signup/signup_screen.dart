@@ -14,27 +14,23 @@ class SignUpScreen extends StatelessWidget {
       child: SingleChildScrollView(
         child: Responsive(
           mobile: MobileSignupScreen(),
-          desktop: Row(
-            children: [
-              Expanded(
-                child: SignUpScreenTopImage(),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 450,
-                      child: SignUpForm(),
-                    ),
-                    SizedBox(height: defaultPadding / 2),
-                    // SocalSignUp()
-                  ],
-                ),
-              )
-            ],
-          ),
+          desktop: DesktopSignupScreen(), // 修改这里
         ),
+      ),
+    );
+  }
+}
+
+// 新增桌面端布局组件
+class DesktopSignupScreen extends StatelessWidget {
+  const DesktopSignupScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: SizedBox(
+        width: 450, // 保持固定宽度以确保在大屏幕上仍然美观
+        child: SignUpForm(),
       ),
     );
   }
@@ -61,7 +57,6 @@ class MobileSignupScreen extends StatelessWidget {
             Spacer(),
           ],
         ),
-        // const SocalSignUp()
       ],
     );
   }

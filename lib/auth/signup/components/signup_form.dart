@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
 import '../../../shared/constants.dart';
-import '../../Login/login_screen.dart';
-import '../../components/already_have_an_account_acheck.dart';
+import '../../../shared/navigation_service.dart';
+import '../../components/auth_mode_toggle.dart';
 
 class SignUpForm extends StatelessWidget {
   const SignUpForm({
@@ -44,22 +43,15 @@ class SignUpForm extends StatelessWidget {
           ),
           const SizedBox(height: defaultPadding / 2),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              // TODO: 实现注册逻辑
+            },
             child: Text("Sign Up".toUpperCase()),
           ),
           const SizedBox(height: defaultPadding),
-          AlreadyHaveAnAccountCheck(
-            login: false,
-            press: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) {
-                    return const LoginScreen();
-                  },
-                ),
-              );
-            },
+          AuthModeToggle(
+            isLoginMode: false,
+            onTap: () => NavigationService.navigateToLogin(context),
           ),
         ],
       ),

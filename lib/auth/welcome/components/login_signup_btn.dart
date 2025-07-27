@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-
 import '../../../shared/constants.dart';
-import '../../login/login_screen.dart';
-import '../../signup/signup_screen.dart';
-
-
-
+import '../../../shared/navigation_service.dart';
 
 class LoginAndSignupBtn extends StatelessWidget {
   const LoginAndSignupBtn({
@@ -17,32 +12,12 @@ class LoginAndSignupBtn extends StatelessWidget {
     return Column(
       children: [
         ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) {
-                  return const LoginScreen();
-                },
-              ),
-            );
-          },
-          child: Text(
-            "login".toUpperCase(),
-          ),
+          onPressed: () => NavigationService.navigateToLogin(context),
+          child: Text("Login".toUpperCase()),
         ),
         const SizedBox(height: 16),
         ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) {
-                  return const SignUpScreen();
-                },
-              ),
-            );
-          },
+          onPressed: () => NavigationService.navigateToSignUp(context),
           style: ElevatedButton.styleFrom(
             backgroundColor: kPrimaryLightColor,
             elevation: 0,

@@ -14,28 +14,25 @@ class WelcomeScreen extends StatelessWidget {
       child: SingleChildScrollView(
         child: SafeArea(
           child: Responsive(
-            desktop: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: WelcomeImage(),
-                ),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 450,
-                        child: LoginAndSignupBtn(),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            desktop: DesktopWelcomeScreen(), // 修改这里
             mobile: MobileWelcomeScreen(),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// 新增桌面端布局组件
+class DesktopWelcomeScreen extends StatelessWidget {
+  const DesktopWelcomeScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: SizedBox(
+        width: 450,
+        child: LoginAndSignupBtn(),
       ),
     );
   }

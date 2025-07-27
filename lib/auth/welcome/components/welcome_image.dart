@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
 import '../../../shared/constants.dart';
-
+import '../../../shared/widgets/svg_image_display.dar.dart';
 
 class WelcomeImage extends StatelessWidget {
   const WelcomeImage({
@@ -11,27 +10,10 @@ class WelcomeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Text(
-          "WELCOME TO EDU",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: defaultPadding * 2),
-        Row(
-          children: [
-            const Spacer(),
-            Expanded(
-              flex: 8,
-              child: SvgPicture.asset(
-                "assets/icons/chat.svg",
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-        const SizedBox(height: defaultPadding * 2),
-      ],
+    return SvgImageDisplay(
+      assetPath: "assets/icons/chat.svg",
+      title: "WELCOME TO EDU",
+      titlePadding: defaultPadding * 2,
     );
   }
 }

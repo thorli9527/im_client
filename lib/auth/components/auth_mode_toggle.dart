@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-
 import '../../shared/constants.dart';
 
-class AlreadyHaveAnAccountCheck extends StatelessWidget {
-  final bool login;
-  final Function? press;
-  const AlreadyHaveAnAccountCheck({
+class AuthModeToggle extends StatelessWidget {
+  final bool isLoginMode;
+  final VoidCallback onTap;
+
+  const AuthModeToggle({
     Key? key,
-    this.login = true,
-    required this.press,
+    this.isLoginMode = true,
+    required this.onTap,
   }) : super(key: key);
 
   @override
@@ -17,13 +17,15 @@ class AlreadyHaveAnAccountCheck extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         Text(
-          login ? "Don’t have an Account ? " : "Already have an Account ? ",
+          isLoginMode
+              ? "Don't have an Account? "
+              : "Already have an Account? ",
           style: const TextStyle(color: kPrimaryColor),
         ),
         GestureDetector(
-          onTap: press as void Function()?,
+          onTap: onTap,
           child: Text(
-            login ? "Sign Up" : "Sign In",
+            isLoginMode ? "Sign Up" : "Sign In",
             style: const TextStyle(
               color: kPrimaryColor,
               fontWeight: FontWeight.bold,
