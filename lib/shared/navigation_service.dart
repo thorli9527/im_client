@@ -1,48 +1,28 @@
 import 'package:flutter/material.dart';
-import '../auth/login/login_screen.dart';
-import '../auth/signup/signup_screen.dart';
-import '../auth/welcome/welcome_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class NavigationService {
   static void navigateToLogin(BuildContext context, {bool replace = false}) {
     if (replace) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      context.go('/login');
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      context.push('/login');
     }
   }
 
   static void navigateToSignUp(BuildContext context, {bool replace = false}) {
     if (replace) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const SignUpScreen()),
-      );
+      context.go('/signup');
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const SignUpScreen()),
-      );
+      context.push('/signup');
     }
   }
 
   static void navigateToWelcome(BuildContext context, {bool replace = false}) {
     if (replace) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-      );
+      context.go('/');
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-      );
+      context.push('/');
     }
   }
 }

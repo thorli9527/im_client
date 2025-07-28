@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -9,94 +8,50 @@ class WindowControls extends StatefulWidget {
   State<WindowControls> createState() => _WindowControlsState();
 }
 
-class _WindowControlsState extends State<WindowControls> with WindowListener {
-  @override
-  void initState() {
-    super.initState();
-    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      windowManager.addListener(this);
-    }
-  }
-
-  @override
-  void dispose() {
-    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      windowManager.removeListener(this);
-    }
-    super.dispose();
-  }
-
+class _WindowControlsState extends State<WindowControls> {
   @override
   Widget build(BuildContext context) {
-    // 在 macOS 上不显示窗口控制按钮，因为 macOS 有系统默认的窗口控制
-    if (!Platform.isMacOS && (Platform.isWindows || Platform.isLinux)) {
-      return Row(
-        children: [
-          // 添加可拖拽区域
-          Expanded(
-            child: GestureDetector(
-              onPanStart: (details) {
-                windowManager.startDragging();
-              },
-              child: Container(
-                color: Colors.transparent,
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onPanStart: (_) => windowManager.startDragging(),
+      child: Container(
+        color: Colors.transparent,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: IconButton(
+                icon: const Icon(Icons.minimize, size: 18),
+                onPressed: () => windowManager.minimize(),
+                padding: EdgeInsets.zero,
+                splashRadius: 18,
               ),
             ),
-          ),
-          IconButton(
-            onPressed: () => windowManager.minimize(),
-            icon: const Icon(Icons.minimize, size: 16),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              shape: const CircleBorder(),
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: IconButton(
+                icon: const Icon(Icons.crop_square, size: 16),
+                onPressed: () => windowManager.maximize(),
+                padding: EdgeInsets.zero,
+                splashRadius: 18,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: () => windowManager.maximize(),
-            icon: const Icon(Icons.crop_square, size: 14),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              shape: const CircleBorder(),
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () => windowManager.close(),
+                padding: EdgeInsets.zero,
+                splashRadius: 18,
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: () => windowManager.close(),
-            icon: const Icon(Icons.close, size: 16),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              shape: const CircleBorder(),
-            ),
-          ),
-          const SizedBox(width: 16),
-        ],
-      );
-    } else {
-      // macOS 或其他平台只提供拖拽区域
-      return Expanded(
-        child: GestureDetector(
-          onPanStart: (details) {
-            windowManager.startDragging();
-          },
-          child: Container(
-            color: Colors.transparent,
-          ),
+          ],
         ),
-      );
-    }
-  }
-
-  @override
-  void onWindowResize() {
-    setState(() {});
-  }
-
-  @override
-  void onWindowMove() {
-    setState(() {});
+      ),
+    );
   }
 }
