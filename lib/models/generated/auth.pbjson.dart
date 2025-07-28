@@ -31,24 +31,39 @@ final $typed_data.Uint8List deviceTypeDescriptor = $convert.base64Decode(
     'CgpEZXZpY2VUeXBlEhIKDkRFVklDRV9VTktOT1dOEAASCgoGTU9CSUxFEAESCwoHREVTS1RPUB'
     'ACEgcKA1dFQhADEgcKA0FMTBBk');
 
+@$core.Deprecated('Use authTypeDescriptor instead')
+const AuthType$json = {
+  '1': 'AuthType',
+  '2': [
+    {'1': 'AUTH_TYPE_UNKNOWN', '2': 0},
+    {'1': 'AUTH_TYPE_EMAIL', '2': 1},
+    {'1': 'AUTH_TYPE_PHONE', '2': 2},
+  ],
+};
+
+/// Descriptor for `AuthType`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List authTypeDescriptor = $convert.base64Decode(
+    'CghBdXRoVHlwZRIVChFBVVRIX1RZUEVfVU5LTk9XThAAEhMKD0FVVEhfVFlQRV9FTUFJTBABEh'
+    'MKD0FVVEhfVFlQRV9QSE9ORRAC');
+
 @$core.Deprecated('Use loginReqMsgDescriptor instead')
 const LoginReqMsg$json = {
   '1': 'LoginReqMsg',
   '2': [
     {'1': 'message_id', '3': 1, '4': 1, '5': 4, '10': 'messageId'},
-    {'1': 'username', '3': 2, '4': 1, '5': 9, '10': 'username'},
-    {'1': 'password', '3': 3, '4': 1, '5': 9, '10': 'password'},
-    {'1': 'device_type', '3': 4, '4': 1, '5': 14, '6': '.protocol.auth.DeviceType', '10': 'deviceType'},
-    {'1': 'app_key', '3': 5, '4': 1, '5': 9, '10': 'appKey'},
+    {'1': 'auth_type', '3': 2, '4': 1, '5': 14, '6': '.protocol.auth.AuthType', '10': 'authType'},
+    {'1': 'auth_content', '3': 3, '4': 1, '5': 9, '10': 'authContent'},
+    {'1': 'password', '3': 4, '4': 1, '5': 9, '10': 'password'},
+    {'1': 'device_type', '3': 5, '4': 1, '5': 14, '6': '.protocol.auth.DeviceType', '10': 'deviceType'},
   ],
 };
 
 /// Descriptor for `LoginReqMsg`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List loginReqMsgDescriptor = $convert.base64Decode(
-    'CgtMb2dpblJlcU1zZxIdCgptZXNzYWdlX2lkGAEgASgEUgltZXNzYWdlSWQSGgoIdXNlcm5hbW'
-    'UYAiABKAlSCHVzZXJuYW1lEhoKCHBhc3N3b3JkGAMgASgJUghwYXNzd29yZBI6CgtkZXZpY2Vf'
-    'dHlwZRgEIAEoDjIZLnByb3RvY29sLmF1dGguRGV2aWNlVHlwZVIKZGV2aWNlVHlwZRIXCgdhcH'
-    'Bfa2V5GAUgASgJUgZhcHBLZXk=');
+    'CgtMb2dpblJlcU1zZxIdCgptZXNzYWdlX2lkGAEgASgEUgltZXNzYWdlSWQSNAoJYXV0aF90eX'
+    'BlGAIgASgOMhcucHJvdG9jb2wuYXV0aC5BdXRoVHlwZVIIYXV0aFR5cGUSIQoMYXV0aF9jb250'
+    'ZW50GAMgASgJUgthdXRoQ29udGVudBIaCghwYXNzd29yZBgEIAEoCVIIcGFzc3dvcmQSOgoLZG'
+    'V2aWNlX3R5cGUYBSABKA4yGS5wcm90b2NvbC5hdXRoLkRldmljZVR5cGVSCmRldmljZVR5cGU=');
 
 @$core.Deprecated('Use loginRespMsgDescriptor instead')
 const LoginRespMsg$json = {

@@ -1,3 +1,5 @@
+// 文件路径: lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:im_client/shared/constants.dart';
@@ -5,6 +7,7 @@ import 'shared/window_manager_service.dart';
 import 'router.dart';
 import 'services/database_service.dart';
 import 'services/app_config_service.dart';
+import 'channel/stream_client.dart'; // 添加此导入
 import 'utils/log_util.dart';
 
 void main() async {
@@ -35,6 +38,9 @@ class MyApp extends ConsumerWidget {
     final databaseServiceAsync = ref.watch(databaseServiceAsyncProvider);
     final appConfigServiceAsync = ref.watch(appConfigServiceProvider);
 
+    // 触发自动连接（在应用启动时）
+    ref.watch(autoConnectProvider);
+
     return databaseServiceAsync.when(
       data: (databaseService) {
         LogUtil.info('MyApp', '🗄️ 数据库服务已加载');
@@ -43,10 +49,7 @@ class MyApp extends ConsumerWidget {
             LogUtil.info('MyApp', '⚙️ 应用配置服务已加载');
             LogUtil.info('MyApp', '🎨 当前主题模式: ${appConfigService.themeMode}');
 
-            // 检查是否首次启动
-            _checkFirstLaunch(appConfigService);
-
-            return _buildApp(context, appConfigService);
+            return _buildApp(appConfigService);
           },
           loading: () => _buildLoading(),
           error: (error, stack) {
@@ -63,7 +66,7 @@ class MyApp extends ConsumerWidget {
     );
   }
 
-  Widget _buildApp(BuildContext context, AppConfigService appConfigService) {
+  Widget _buildApp(AppConfigService appConfigService) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Auth',
@@ -117,24 +120,5 @@ class MyApp extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  // 在 _checkFirstLaunch 方法中替换相关逻辑
-  Future<void> _checkFirstLaunch(AppConfigService appConfigService) async {
-    try {
-      final isFirst = await appConfigService.isFirstLaunch();
-      if (isFirst) {
-        LogUtil.info('MyApp', '🆕 首次启动应用');
-        await appConfigService.setFirstLaunchTime();
-      } else {
-        LogUtil.info('MyApp', '🔁 应用已启动过');
-      }
-
-      // 检查登录状态
-      final loggedIn = await appConfigService.isLoggedIn();
-      LogUtil.info('MyApp', '🔐 登录状态: ${loggedIn ? '已登录' : '未登录'}');
-    } catch (e) {
-      LogUtil.error('MyApp', '❌ 检查启动状态时出错', e);
-    }
   }
 }

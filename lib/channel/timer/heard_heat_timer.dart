@@ -9,7 +9,7 @@ class HeartbeatTimer {
 
   HeartbeatTimer({this.interval = const Duration(seconds: 20)});
 
-  void start(StreamClient client) {
+  void start(StreamClient client, {required Duration interval}) {
     stop(); // 确保不重复创建
 
     _heartbeatTimer = Timer.periodic(interval, (_) {

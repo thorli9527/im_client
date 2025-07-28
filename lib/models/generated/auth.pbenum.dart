@@ -39,5 +39,22 @@ class DeviceType extends $pb.ProtobufEnum {
   const DeviceType._(super.value, super.name);
 }
 
+class AuthType extends $pb.ProtobufEnum {
+  static const AuthType AUTH_TYPE_UNKNOWN = AuthType._(0, _omitEnumNames ? '' : 'AUTH_TYPE_UNKNOWN');
+  static const AuthType AUTH_TYPE_EMAIL = AuthType._(1, _omitEnumNames ? '' : 'AUTH_TYPE_EMAIL');
+  static const AuthType AUTH_TYPE_PHONE = AuthType._(2, _omitEnumNames ? '' : 'AUTH_TYPE_PHONE');
+
+  static const $core.List<AuthType> values = <AuthType> [
+    AUTH_TYPE_UNKNOWN,
+    AUTH_TYPE_EMAIL,
+    AUTH_TYPE_PHONE,
+  ];
+
+  static final $core.List<AuthType?> _byValue = $pb.ProtobufEnum.$_initByValueList(values, 2);
+  static AuthType? valueOf($core.int value) =>  value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const AuthType._(super.value, super.name);
+}
+
 
 const $core.bool _omitEnumNames = $core.bool.fromEnvironment('protobuf.omit_enum_names');

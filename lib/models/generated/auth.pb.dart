@@ -28,17 +28,17 @@ export 'auth.pbenum.dart';
 class LoginReqMsg extends $pb.GeneratedMessage {
   factory LoginReqMsg({
     $fixnum.Int64? messageId,
-    $core.String? username,
+    AuthType? authType,
+    $core.String? authContent,
     $core.String? password,
     DeviceType? deviceType,
-    $core.String? appKey,
   }) {
     final result = create();
     if (messageId != null) result.messageId = messageId;
-    if (username != null) result.username = username;
+    if (authType != null) result.authType = authType;
+    if (authContent != null) result.authContent = authContent;
     if (password != null) result.password = password;
     if (deviceType != null) result.deviceType = deviceType;
-    if (appKey != null) result.appKey = appKey;
     return result;
   }
 
@@ -49,10 +49,10 @@ class LoginReqMsg extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LoginReqMsg', package: const $pb.PackageName(_omitMessageNames ? '' : 'protocol.auth'), createEmptyInstance: create)
     ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'messageId', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-    ..aOS(2, _omitFieldNames ? '' : 'username')
-    ..aOS(3, _omitFieldNames ? '' : 'password')
-    ..e<DeviceType>(4, _omitFieldNames ? '' : 'deviceType', $pb.PbFieldType.OE, defaultOrMaker: DeviceType.DEVICE_UNKNOWN, valueOf: DeviceType.valueOf, enumValues: DeviceType.values)
-    ..aOS(5, _omitFieldNames ? '' : 'appKey')
+    ..e<AuthType>(2, _omitFieldNames ? '' : 'authType', $pb.PbFieldType.OE, defaultOrMaker: AuthType.AUTH_TYPE_UNKNOWN, valueOf: AuthType.valueOf, enumValues: AuthType.values)
+    ..aOS(3, _omitFieldNames ? '' : 'authContent')
+    ..aOS(4, _omitFieldNames ? '' : 'password')
+    ..e<DeviceType>(5, _omitFieldNames ? '' : 'deviceType', $pb.PbFieldType.OE, defaultOrMaker: DeviceType.DEVICE_UNKNOWN, valueOf: DeviceType.valueOf, enumValues: DeviceType.values)
     ..hasRequiredFields = false
   ;
 
@@ -83,40 +83,40 @@ class LoginReqMsg extends $pb.GeneratedMessage {
   void clearMessageId() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  $core.String get username => $_getSZ(1);
+  AuthType get authType => $_getN(1);
   @$pb.TagNumber(2)
-  set username($core.String value) => $_setString(1, value);
+  set authType(AuthType value) => $_setField(2, value);
   @$pb.TagNumber(2)
-  $core.bool hasUsername() => $_has(1);
+  $core.bool hasAuthType() => $_has(1);
   @$pb.TagNumber(2)
-  void clearUsername() => $_clearField(2);
+  void clearAuthType() => $_clearField(2);
 
   @$pb.TagNumber(3)
-  $core.String get password => $_getSZ(2);
+  $core.String get authContent => $_getSZ(2);
   @$pb.TagNumber(3)
-  set password($core.String value) => $_setString(2, value);
+  set authContent($core.String value) => $_setString(2, value);
   @$pb.TagNumber(3)
-  $core.bool hasPassword() => $_has(2);
+  $core.bool hasAuthContent() => $_has(2);
   @$pb.TagNumber(3)
-  void clearPassword() => $_clearField(3);
+  void clearAuthContent() => $_clearField(3);
 
   @$pb.TagNumber(4)
-  DeviceType get deviceType => $_getN(3);
+  $core.String get password => $_getSZ(3);
   @$pb.TagNumber(4)
-  set deviceType(DeviceType value) => $_setField(4, value);
+  set password($core.String value) => $_setString(3, value);
   @$pb.TagNumber(4)
-  $core.bool hasDeviceType() => $_has(3);
+  $core.bool hasPassword() => $_has(3);
   @$pb.TagNumber(4)
-  void clearDeviceType() => $_clearField(4);
+  void clearPassword() => $_clearField(4);
 
   @$pb.TagNumber(5)
-  $core.String get appKey => $_getSZ(4);
+  DeviceType get deviceType => $_getN(4);
   @$pb.TagNumber(5)
-  set appKey($core.String value) => $_setString(4, value);
+  set deviceType(DeviceType value) => $_setField(5, value);
   @$pb.TagNumber(5)
-  $core.bool hasAppKey() => $_has(4);
+  $core.bool hasDeviceType() => $_has(4);
   @$pb.TagNumber(5)
-  void clearAppKey() => $_clearField(5);
+  void clearDeviceType() => $_clearField(5);
 }
 
 /// ================================

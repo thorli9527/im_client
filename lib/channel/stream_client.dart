@@ -1,13 +1,17 @@
+// 文件路径: lib/channel/stream_client.dart
+
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:riverpod/riverpod.dart';
 import 'package:im_client/channel/stream_channel.dart';
 import 'package:im_client/channel/timer/heard_heat_timer.dart';
 import 'package:protobuf/protobuf.dart';
 import 'package:stream_channel/stream_channel.dart';
 
 import '../codec/message_encoder.dart';
+import '../config/app_config.dart';
 import '../models/generated/auth.pb.dart';
 import '../models/generated/common.pbenum.dart';
 import '../models/generated/status.pb.dart';
@@ -19,6 +23,7 @@ class StreamClient {
   late StreamChannel<Uint8List> _channel;
   StreamSubscription? _subscription;
   final _connectionController = StreamController<ConnectionStatus>.broadcast();
+  final _messageController = StreamController<MapEntry<ByteMessageType, Uint8List>>.broadcast();
   final _heartbeat = HeartbeatTimer();
   final _buffer = BytesBuilder(copy: false);
   ConnectionStatus _status = ConnectionStatus.disconnected;
@@ -43,8 +48,8 @@ class StreamClient {
       );
       _setStatus(ConnectionStatus.connected);
 
-      // 延时启动心跳
-      Future.delayed(Duration(seconds: 10), () => _heartbeat.start(this));
+      // 启动心跳，每60秒一次
+      _heartbeat.start(this, interval: Duration(seconds: 60));
     } catch (e) {
       LogUtil.error('IMClient', '❌ Connect failed: $e');
       _setStatus(ConnectionStatus.disconnected);
@@ -65,6 +70,18 @@ class StreamClient {
   void dispose() {
     disconnect();
     _connectionController.close();
+    _messageController.close();
+  }
+
+  // 自动连接方法，在应用启动时调用
+  Future<void> autoConnect() async {
+    try {
+      await connect(AppConfig.socketHost, AppConfig.socketPort);
+      LogUtil.info('StreamClient', '✅ 自动连接成功');
+    } catch (e) {
+      LogUtil.error('StreamClient', '❌ 自动连接失败', e);
+      // 可以选择在此处安排重连
+    }
   }
 
   void send(GeneratedMessage message, {Function(Object? any)? ackCallback}) {
@@ -74,11 +91,16 @@ class StreamClient {
     }
 
     ByteMessageType messageType = ByteMessageType.UNKNOWN_BYTE_MESSAGE_TYPE;
-    int  messageId = 0;
+    int messageId = 0;
 
     if (message is LoginReqMsg) {
       messageType = ByteMessageType.LoginReqMsgType;
       messageId = message.messageId.toInt();
+    } else if (message is LogoutReqMsg) {
+      messageType = ByteMessageType.LogoutReqMsgType;
+      messageId = message.messageId.toInt();
+    } else if (message is HeartbeatMsg) {
+      messageType = ByteMessageType.HeartbeatMsgType;
     }
 
     final frame = encodeFramedMessage(messageType.value, message.writeToBuffer());
@@ -90,6 +112,59 @@ class StreamClient {
       LogUtil.error('StreamClient', '❌ Failed to send message: $e');
       _onError(e);
     }
+  }
+
+  /// 等待特定类型的消息
+  Future<T> waitForMessage<T extends GeneratedMessage>(
+    bool Function(T) predicate, {
+    Duration timeout = const Duration(seconds: 30),
+  }) {
+    final completer = Completer<T>();
+
+    final subscription = _messageController.stream
+        .where((entry) => _getMessageType<T>() == entry.key)
+        .map((entry) => _parseMessage<T>(entry.value))
+        .where((msg) => predicate(msg))
+        .listen(
+          (msg) {
+            if (!completer.isCompleted) {
+              completer.complete(msg);
+            }
+          },
+          onError: (error) {
+            if (!completer.isCompleted) {
+              completer.completeError(error);
+            }
+          },
+        );
+
+    // 设置超时
+    Future.delayed(timeout, () {
+      if (!completer.isCompleted) {
+        subscription.cancel();
+        completer.completeError(TimeoutException('等待消息超时', timeout));
+      }
+    });
+
+    return completer.future.whenComplete(() => subscription.cancel());
+  }
+
+  ByteMessageType _getMessageType<T extends GeneratedMessage>() {
+    if (T == LoginRespMsg) {
+      return ByteMessageType.LoginRespMsgType;
+    } else if (T == LogoutRespMsg) {
+      return ByteMessageType.LogoutRespMsgType;
+    }
+    return ByteMessageType.UNKNOWN_BYTE_MESSAGE_TYPE;
+  }
+
+  T _parseMessage<T extends GeneratedMessage>(Uint8List data) {
+    if (T == LoginRespMsg) {
+      return LoginRespMsg.fromBuffer(data) as T;
+    } else if (T == LogoutRespMsg) {
+      return LogoutRespMsg.fromBuffer(data) as T;
+    }
+    throw Exception('Unsupported message type');
   }
 
   void _onData(Uint8List data) {
@@ -118,6 +193,9 @@ class StreamClient {
           LogUtil.warning('StreamClient', '⚠️ Unknown message type: $messageType');
           continue;
         }
+
+        // 广播消息给等待者
+        _messageController.add(MapEntry(type, payload));
 
         _handleIncomingMessage(type, payload);
       } catch (e, stackTrace) {
@@ -151,6 +229,7 @@ class StreamClient {
   void _onDisconnected() {
     LogUtil.info('IMClient', '🔌 Server disconnected');
     _setStatus(ConnectionStatus.disconnected);
+    _heartbeat.stop(); // 停止心跳
   }
 
   void _setStatus(ConnectionStatus newStatus) {
@@ -162,9 +241,18 @@ class StreamClient {
   void _handleIncomingMessage(ByteMessageType type, Uint8List payload) {
     try {
       switch (type) {
-        case ByteMessageType.LoginReqMsgType:
-          final msg = LoginReqMsg.fromBuffer(payload);
-          LogUtil.info('StreamClient', '🔑 Auth response received');
+        case ByteMessageType.LoginRespMsgType:
+          final msg = LoginRespMsg.fromBuffer(payload);
+          LogUtil.info('StreamClient', '🔑 Auth response received, success: ${msg.success}');
+          break;
+
+        case ByteMessageType.LogoutRespMsgType:
+          final msg = LogoutRespMsg.fromBuffer(payload);
+          LogUtil.info('StreamClient', '🚪 Logout response received');
+          break;
+
+        case ByteMessageType.HeartbeatMsgType:
+          LogUtil.debug('StreamClient', '💓 Heartbeat received');
           break;
 
         default:
@@ -174,4 +262,20 @@ class StreamClient {
       LogUtil.error('StreamClient', '❌ Message process failed', e, stackTrace);
     }
   }
+
+  Future<void> closeConnection() async {
+   await disconnect();
+  }
 }
+
+// Riverpod Provider
+final streamClientProvider = Provider<StreamClient>((ref) {
+  return StreamClient();
+});
+
+// 自动连接的Provider
+final autoConnectProvider = FutureProvider<void>((ref) async {
+  final streamClient = ref.read(streamClientProvider);
+  await streamClient.autoConnect();
+  return;
+});
