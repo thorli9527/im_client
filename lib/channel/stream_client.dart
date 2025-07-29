@@ -4,7 +4,7 @@ import 'dart:async';
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/riverpod.dart'; // 添加 Riverpod 导入
 import 'package:im_client/channel/stream_channel.dart';
 import 'package:im_client/channel/timer/heard_heat_timer.dart';
 import 'package:protobuf/protobuf.dart';
@@ -84,91 +84,7 @@ class StreamClient {
     }
   }
 
-  void send(GeneratedMessage message, {Function(Object? any)? ackCallback}) {
-    if (_status != ConnectionStatus.connected) {
-      LogUtil.warning('IMClient', '🚫 Cannot send message: Not connected.');
-      return;
-    }
-
-    ByteMessageType messageType = ByteMessageType.UNKNOWN_BYTE_MESSAGE_TYPE;
-    int messageId = 0;
-
-    if (message is LoginReqMsg) {
-      messageType = ByteMessageType.LoginReqMsgType;
-      messageId = message.messageId.toInt();
-    } else if (message is LogoutReqMsg) {
-      messageType = ByteMessageType.LogoutReqMsgType;
-      messageId = message.messageId.toInt();
-    } else if (message is HeartbeatMsg) {
-      messageType = ByteMessageType.HeartbeatMsgType;
-    }
-
-    final frame = encodeFramedMessage(messageType.value, message.writeToBuffer());
-
-    try {
-      _channel.sink.add(Uint8List.fromList(frame));
-      LogUtil.info('StreamClient', '📤 Sent: $messageType, messageId: $messageId');
-    } catch (e) {
-      LogUtil.error('StreamClient', '❌ Failed to send message: $e');
-      _onError(e);
-    }
-  }
-
-  /// 等待特定类型的消息
-  Future<T> waitForMessage<T extends GeneratedMessage>(
-    bool Function(T) predicate, {
-    Duration timeout = const Duration(seconds: 30),
-  }) {
-    final completer = Completer<T>();
-
-    final subscription = _messageController.stream
-        .where((entry) => _getMessageType<T>() == entry.key)
-        .map((entry) => _parseMessage<T>(entry.value))
-        .where((msg) => predicate(msg))
-        .listen(
-          (msg) {
-            if (!completer.isCompleted) {
-              completer.complete(msg);
-            }
-          },
-          onError: (error) {
-            if (!completer.isCompleted) {
-              completer.completeError(error);
-            }
-          },
-        );
-
-    // 设置超时
-    Future.delayed(timeout, () {
-      if (!completer.isCompleted) {
-        subscription.cancel();
-        completer.completeError(TimeoutException('等待消息超时', timeout));
-      }
-    });
-
-    return completer.future.whenComplete(() => subscription.cancel());
-  }
-
-  ByteMessageType _getMessageType<T extends GeneratedMessage>() {
-    if (T == LoginRespMsg) {
-      return ByteMessageType.LoginRespMsgType;
-    } else if (T == LogoutRespMsg) {
-      return ByteMessageType.LogoutRespMsgType;
-    }
-    return ByteMessageType.UNKNOWN_BYTE_MESSAGE_TYPE;
-  }
-
-  T _parseMessage<T extends GeneratedMessage>(Uint8List data) {
-    if (T == LoginRespMsg) {
-      return LoginRespMsg.fromBuffer(data) as T;
-    } else if (T == LogoutRespMsg) {
-      return LogoutRespMsg.fromBuffer(data) as T;
-    }
-    throw Exception('Unsupported message type');
-  }
-
   void _onData(Uint8List data) {
-    LogUtil.debug('StreamClient', '📥 Received data: ${data.length}');
     _buffer.add(data);
     final bufferData = _buffer.takeBytes();
 
@@ -251,6 +167,11 @@ class StreamClient {
           LogUtil.info('StreamClient', '🚪 Logout response received');
           break;
 
+        case ByteMessageType.ACKMsgType:
+          final msg = AckMsg.fromBuffer(payload);
+          LogUtil.info('StreamClient', '✅ ACK消息收到: messageId=${msg.messageId}');
+          break;
+
         case ByteMessageType.HeartbeatMsgType:
           LogUtil.debug('StreamClient', '💓 Heartbeat received');
           break;
@@ -263,8 +184,88 @@ class StreamClient {
     }
   }
 
+  /// 发送 protobuf 消息
+  void send(GeneratedMessage message) {
+    if (_status != ConnectionStatus.connected) {
+      LogUtil.warning('IMClient', '🚫 无法发送消息: 未连接');
+      return;
+    }
+
+    try {
+      final data = message.writeToBuffer();
+      final frame = encodeFramedMessage(_getMessageTypeValue(message), data);
+
+      _channel.sink.add(Uint8List.fromList(frame));
+      LogUtil.info('StreamClient', '📤 发送消息: ${message.runtimeType}');
+    } catch (e) {
+      LogUtil.error('StreamClient', '❌ 发送消息失败: $e');
+      _onError(e);
+    }
+  }
+
+  /// 发送原始数据
+  void sendRaw(int messageType, Uint8List data, int messageId) {
+    if (_status != ConnectionStatus.connected) {
+      LogUtil.warning('IMClient', '🚫 无法发送消息: 未连接');
+      return;
+    }
+
+    try {
+      final frame = encodeFramedMessage(messageType, data);
+      _channel.sink.add(Uint8List.fromList(frame));
+      LogUtil.info('StreamClient', '📤 发送原始数据: messageType=$messageType, messageId=$messageId');
+    } catch (e) {
+      LogUtil.error('StreamClient', '❌ 发送原始数据失败: $e');
+      _onError(e);
+    }
+  }
+
+  /// 根据消息类型获取对应的整数值
+  int _getMessageTypeValue(GeneratedMessage message) {
+    // 这里需要根据具体的消息类型返回对应的整数值
+    // 这只是一个示例实现，实际应该根据你的协议定义来实现
+    if (message is LoginReqMsg) {
+      return 2; // LoginReqMsgType
+    } else if (message is LogoutReqMsg) {
+      return 4; // LogoutReqMsgType
+    } else if (message is HeartbeatMsg) {
+      return 1; // HeartbeatMsgType
+    }
+    // 添加更多消息类型...
+
+    LogUtil.warning('StreamClient', '⚠️ 未知消息类型: ${message.runtimeType}');
+    return 0; // 默认值
+  }
+
+  /// 等待特定类型的消息
+  Future<T> waitForMessage<T extends GeneratedMessage>(
+    bool Function(T) predicate, {
+    Duration timeout = const Duration(seconds: 10),
+  }) {
+    final completer = Completer<T>();
+    late StreamSubscription subscription;
+
+    subscription = _messageController.stream
+        .where((entry) => entry.value is T)
+        .map((entry) => entry.value as T)
+        .where(predicate)
+        .listen((message) {
+      completer.complete(message);
+      subscription.cancel();
+    });
+
+    Future.delayed(timeout, () {
+      if (!completer.isCompleted) {
+        completer.completeError(TimeoutException('等待消息超时', timeout));
+        subscription.cancel();
+      }
+    });
+
+    return completer.future;
+  }
+
   Future<void> closeConnection() async {
-   await disconnect();
+    await disconnect();
   }
 }
 

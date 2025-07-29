@@ -215,10 +215,14 @@ class AckMsg extends $pb.GeneratedMessage {
   factory AckMsg({
     $fixnum.Int64? messageId,
     $0.ByteMessageType? ackType,
+    $core.bool? success,
+    $core.int? errorCode,
   }) {
     final result = create();
     if (messageId != null) result.messageId = messageId;
     if (ackType != null) result.ackType = ackType;
+    if (success != null) result.success = success;
+    if (errorCode != null) result.errorCode = errorCode;
     return result;
   }
 
@@ -230,6 +234,8 @@ class AckMsg extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'AckMsg', package: const $pb.PackageName(_omitMessageNames ? '' : 'protocol.status'), createEmptyInstance: create)
     ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'messageId', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..e<$0.ByteMessageType>(2, _omitFieldNames ? '' : 'ackType', $pb.PbFieldType.OE, defaultOrMaker: $0.ByteMessageType.UNKNOWN_BYTE_MESSAGE_TYPE, valueOf: $0.ByteMessageType.valueOf, enumValues: $0.ByteMessageType.values)
+    ..aOB(3, _omitFieldNames ? '' : 'success')
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.O3)
     ..hasRequiredFields = false
   ;
 
@@ -267,6 +273,24 @@ class AckMsg extends $pb.GeneratedMessage {
   $core.bool hasAckType() => $_has(1);
   @$pb.TagNumber(2)
   void clearAckType() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get success => $_getBF(2);
+  @$pb.TagNumber(3)
+  set success($core.bool value) => $_setBool(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasSuccess() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSuccess() => $_clearField(3);
+
+  @$pb.TagNumber(5)
+  $core.int get errorCode => $_getIZ(3);
+  @$pb.TagNumber(5)
+  set errorCode($core.int value) => $_setSignedInt32(3, value);
+  @$pb.TagNumber(5)
+  $core.bool hasErrorCode() => $_has(3);
+  @$pb.TagNumber(5)
+  void clearErrorCode() => $_clearField(5);
 }
 
 /// =======================================

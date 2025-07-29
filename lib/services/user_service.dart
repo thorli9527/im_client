@@ -1,10 +1,12 @@
 // 文件路径: lib/services/user_service.dart
 
+import 'dart:io';
 import 'package:fixnum/src/int64.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:im_client/models/system/login_response.dart';
 import 'package:im_client/services/api_service.dart';
 import 'package:im_client/services/app_config_service.dart';
+import 'package:im_client/services/message/ack_message_service.dart'; // 添加导入
 import 'package:im_client/channel/stream_client.dart';
 import 'package:im_client/config/app_config.dart';
 import 'package:im_client/utils/log_util.dart';
@@ -28,33 +30,42 @@ class UserService {
     try {
       LogUtil.info('UserService', '🔐 开始Socket登录: $username');
 
-      // 获取 StreamClient
+      // 获取 StreamClient 和 AckMessageService
       final streamClient = _ref.read(streamClientProvider);
+      final ackService = _ref.read(ackMessageServiceProvider);
 
       // 确保连接已建立
       if (streamClient.status != ConnectionStatus.connected) {
         await streamClient.connect(AppConfig.socketHost, AppConfig.socketPort);
       }
-      //
 
-      // 创建登录请求消息
+      // 创建登录请求消息，使用雪花ID
+      final messageId = IdUtils.buildSnowflake();
       final loginReq = LoginReqMsg.create()
-        ..messageId = IdUtils.buildSnowflake() as Int64
-        ..authType=AuthType.AUTH_TYPE_EMAIL
+        ..messageId = Int64(messageId)
+        ..authType = AuthType.AUTH_TYPE_EMAIL
+        ..authContent = username
         ..password = password
         ..deviceType = DeviceType.DESKTOP;
 
-      // 发送登录请求并等待响应
-      final loginFuture = streamClient.waitForMessage<LoginRespMsg>(
-        (msg) => msg.messageId == loginReq.messageId,
-        timeout: Duration(seconds: 10),
+      // 将消息添加到ACK服务中
+      await ackService.addPendingMessage(
+        messageId: messageId,
+        messageType: ByteMessageType.LoginReqMsgType.value,
+        originalData: loginReq.writeToBuffer(),
       );
 
-      // 发送登录请求
-      streamClient.send(loginReq);
+      // 等待登录响应
+      final loginFuture = streamClient.waitForMessage<LoginRespMsg>(
+            (msg) => msg.messageId == Int64(messageId),
+        timeout: Duration(seconds: 15),
+      );
 
       // 等待登录响应
       final loginResp = await loginFuture;
+
+      // 标记消息为已确认（冗余保护）
+      await ackService.markAsAcknowledged(messageId);
 
       if (!loginResp.success) {
         throw Exception('登录失败');
@@ -72,11 +83,12 @@ class UserService {
 
       LogUtil.info('UserService', '✅ Socket登录成功: $username');
       return loginResponse;
-    } catch (e) {
-      LogUtil.error('UserService', '❌ Socket登录失败', e);
-      throw Exception('登录失败：$e');
+    } on SocketException catch (e) {
+      LogUtil.error('UserService', '❌ Socket连接失败', e);
+      throw Exception('网络连接失败，请检查服务器是否运行在 ${AppConfig.socketHost}:${AppConfig.socketPort}');
     }
   }
+
 
   /// 检查是否已登录
   Future<bool> isLoggedIn() async {
@@ -93,22 +105,34 @@ class UserService {
     try {
       LogUtil.info('UserService', '🚪 开始登出');
 
+      // 获取 StreamClient 和 AckMessageService
+      final streamClient = _ref.read(streamClientProvider);
+      final ackService = _ref.read(ackMessageServiceProvider);
+
       // 发送登出请求到服务器
       try {
-        final logoutReq = LogoutReqMsg.create()
-          ..messageId = IdUtils.buildSnowflake() as Int64;
-
-        final streamClient = _ref.read(streamClientProvider);
+        final messageId = IdUtils.buildSnowflake() as Int64;
+        final reqMsg = LogoutReqMsg.create()
+          ..messageId = messageId;
 
         // 如果连接仍然有效，发送登出请求
         if (streamClient.status == ConnectionStatus.connected) {
+          // 将消息添加到ACK服务中
+          await ackService.addPendingMessage(
+            messageId: messageId.toInt(),
+            messageType: ByteMessageType.LoginReqMsgType.value,
+            originalData: reqMsg.writeToBuffer(),
+          );
           final logoutFuture = streamClient.waitForMessage<LogoutRespMsg>(
-            (msg) => msg.messageId == logoutReq.messageId,
+            (msg) => msg.messageId == messageId,
             timeout: Duration(seconds: 5),
           );
 
-          streamClient.send(logoutReq);
+          streamClient.send(reqMsg);
           await logoutFuture; // 等待登出响应
+
+          // 标记消息为已确认
+          ackService.markAsAcknowledged(messageId.toInt());
         }
       } catch (e) {
         LogUtil.warning('UserService', '⚠️ 服务端登出请求失败', e);
@@ -116,7 +140,6 @@ class UserService {
 
       // 获取服务
       final appConfigService = await _ref.read(appConfigServiceProvider.future);
-      final streamClient = _ref.read(streamClientProvider);
 
       // 关闭Socket连接
       await streamClient.closeConnection();
@@ -140,11 +163,12 @@ class UserService {
       (exception) => null,
     );
   }
+
   /// 保存登录状态
   Future<void> _persistLoginState(
-      LoginResponse login,
-      String username,
-      ) async {
+    LoginResponse login,
+    String username,
+  ) async {
     final appConfigService = await _ref.read(appConfigServiceProvider.future);
 
     // 执行所有设置操作，不关心返回值
@@ -154,7 +178,6 @@ class UserService {
       appConfigService.setString(ConfigTypeEnum.TOKEN, login.token),
     ], eagerError: false);
   }
-
 
   /// 清除登录状态
   Future<void> _clearLoginState(AppConfigService appConfigService) async {

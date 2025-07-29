@@ -61,13 +61,16 @@ const AckMsg$json = {
   '2': [
     {'1': 'message_id', '3': 1, '4': 1, '5': 4, '10': 'messageId'},
     {'1': 'ack_type', '3': 2, '4': 1, '5': 14, '6': '.common.ByteMessageType', '10': 'ackType'},
+    {'1': 'success', '3': 3, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'error_code', '3': 5, '4': 1, '5': 5, '10': 'errorCode'},
   ],
 };
 
 /// Descriptor for `AckMsg`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List ackMsgDescriptor = $convert.base64Decode(
     'CgZBY2tNc2cSHQoKbWVzc2FnZV9pZBgBIAEoBFIJbWVzc2FnZUlkEjIKCGFja190eXBlGAIgAS'
-    'gOMhcuY29tbW9uLkJ5dGVNZXNzYWdlVHlwZVIHYWNrVHlwZQ==');
+    'gOMhcuY29tbW9uLkJ5dGVNZXNzYWdlVHlwZVIHYWNrVHlwZRIYCgdzdWNjZXNzGAMgASgIUgdz'
+    'dWNjZXNzEh0KCmVycm9yX2NvZGUYBSABKAVSCWVycm9yQ29kZQ==');
 
 @$core.Deprecated('Use reConnectMsgDescriptor instead')
 const ReConnectMsg$json = {

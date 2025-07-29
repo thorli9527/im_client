@@ -1,9 +1,12 @@
+// 文件路径: lib/services/database_service.dart
+
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:riverpod/riverpod.dart';
 
 import '../models/system/system_config.dart';
+import '../models/message/ack_message.dart'; // 确保导入 AckMessage
 import '../utils/log_util.dart';
 
 /// 使用 Riverpod 实现的数据库服务
@@ -18,14 +21,13 @@ class DatabaseService {
     // 创建数据库目录（如果不存在）
     if (!await dbDir.exists()) {
       await dbDir.create(recursive: true);
-    }
-    else{
-      LogUtil.warning('isar.path', '⚙️ ${dbDir.path}');
+    } else {
+      LogUtil.info('DatabaseService', '⚙️ 数据库路径: ${dbDir.path}');
     }
 
-    // 打开 Isar 数据库
+    // 打开 Isar 数据库，添加 AckMessageSchema
     isar = await Isar.open(
-      [SystemConfigSchema],
+      [SystemConfigSchema, AckMessageSchema], // 添加 AckMessageSchema
       directory: dbDir.path,
       name: 'im_client',
     );
