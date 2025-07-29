@@ -1,15 +1,14 @@
 // 文件路径: lib/channel/stream_client.dart
 
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:riverpod/riverpod.dart'; // 添加 Riverpod 导入
-import 'package:im_client/channel/stream_channel.dart';
-import 'package:im_client/channel/timer/heard_heat_timer.dart';
-import 'package:protobuf/protobuf.dart';
+import 'package:riverpod/riverpod.dart';
 import 'package:stream_channel/stream_channel.dart';
+import 'package:protobuf/protobuf.dart';
 
+import 'stream_channel.dart';
+import 'timer/heard_heat_timer.dart';
 import '../codec/message_encoder.dart';
 import '../config/app_config.dart';
 import '../models/generated/auth.pb.dart';
@@ -17,7 +16,11 @@ import '../models/generated/common.pbenum.dart';
 import '../models/generated/status.pb.dart';
 import '../utils/log_util.dart';
 
-enum ConnectionStatus { connected, connecting, disconnected }
+enum ConnectionStatus {
+  disconnected,
+  connecting,
+  connected
+}
 
 class StreamClient {
   late StreamChannel<Uint8List> _channel;
@@ -31,9 +34,10 @@ class StreamClient {
   Stream<ConnectionStatus> get connectionStream => _connectionController.stream;
   ConnectionStatus get status => _status;
 
+  /// 建立 WebSocket 连接
   Future<void> connect(String host, int port) async {
     if (_status != ConnectionStatus.disconnected) {
-      LogUtil.warning('IMClient', '⚠️ Already connecting or connected');
+      LogUtil.warning('StreamClient', '⚠️ 连接已在进行中或已建立');
       return;
     }
 
@@ -50,73 +54,100 @@ class StreamClient {
 
       // 启动心跳，每60秒一次
       _heartbeat.start(this, interval: Duration(seconds: 60));
+      LogUtil.info('StreamClient', '✅ 连接已建立 $host:$port');
     } catch (e) {
-      LogUtil.error('IMClient', '❌ Connect failed: $e');
+      LogUtil.error('StreamClient', '❌ 连接失败: $e');
       _setStatus(ConnectionStatus.disconnected);
       await _channel.sink.close();
       rethrow;
     }
   }
 
+  /// 断开连接
   Future<void> disconnect() async {
     _heartbeat.stop();
     if (_status == ConnectionStatus.connected) {
       await _subscription?.cancel();
       await _channel.sink.close();
       _setStatus(ConnectionStatus.disconnected);
+      LogUtil.info('StreamClient', '🔌 连接已断开');
     }
   }
 
+  /// 关闭所有资源
   void dispose() {
     disconnect();
     _connectionController.close();
     _messageController.close();
+    LogUtil.info('StreamClient', '🧹 资源已释放');
   }
 
-  // 自动连接方法，在应用启动时调用
+  /// 自动连接方法，在应用启动时调用
   Future<void> autoConnect() async {
     try {
       await connect(AppConfig.socketHost, AppConfig.socketPort);
       LogUtil.info('StreamClient', '✅ 自动连接成功');
     } catch (e) {
       LogUtil.error('StreamClient', '❌ 自动连接失败', e);
-      // 可以选择在此处安排重连
     }
   }
 
+  /// 处理接收到的数据
   void _onData(Uint8List data) {
+    LogUtil.debug('StreamClient', '📥 收到数据: ${data.length} 字节');
     _buffer.add(data);
     final bufferData = _buffer.takeBytes();
 
     int offset = 0;
-    while (offset + 8 <= bufferData.length) {
+    while (offset + 5 <= bufferData.length) {
       try {
-        final messageLength = _readUint32(bufferData, offset);
-        final messageType = _readInt32(bufferData, offset + 4);
-        offset += 8;
+        // 读取消息长度(4字节大端)
+        final messageLength = bufferData.buffer.asByteData().getUint32(offset, Endian.big);
+        offset += 4;
 
+        // 检查是否有足够的数据
         if (offset + messageLength > bufferData.length) {
-          LogUtil.warning('StreamClient', '⚠️ Incomplete data, wait for next batch');
-          offset -= 8; // rollback
+          LogUtil.warning('StreamClient', '⚠️ 数据不完整，等待下一批数据');
+          offset -= 4;
           break;
         }
 
-        final payload = bufferData.sublist(offset, offset + messageLength);
-        offset += messageLength;
-
-        final type = ByteMessageType.valueOf(messageType);
-        if (type == null) {
-          LogUtil.warning('StreamClient', '⚠️ Unknown message type: $messageType');
+        // 检查消息长度是否有效
+        if (messageLength < 1) {
+          LogUtil.warning('StreamClient', '⚠️ 无效的消息长度: $messageLength');
+          offset += messageLength;
           continue;
         }
+
+        // 提取消息类型(第一个字节)
+        final messageTypeByte = bufferData[offset];
+        final type = ByteMessageType.valueOf(messageTypeByte);
+
+        if (type == null) {
+          LogUtil.warning('StreamClient', '⚠️ 未知消息类型: $messageTypeByte');
+          offset += messageLength;
+          continue;
+        }
+
+        // 提取protobuf数据(去掉类型字节)
+        final payloadLength = messageLength - 1;
+        if (payloadLength < 0) {
+          LogUtil.warning('StreamClient', '⚠️ 无效的负载长度: $payloadLength');
+          offset += messageLength;
+          continue;
+        }
+
+        final payload = bufferData.sublist(offset + 1, offset + 1 + payloadLength);
+        offset += messageLength;
 
         // 广播消息给等待者
         _messageController.add(MapEntry(type, payload));
 
+        // 处理内部消息
         _handleIncomingMessage(type, payload);
       } catch (e, stackTrace) {
-        LogUtil.error('StreamClient', '❌ Decode failed', e, stackTrace);
-        _buffer.clear(); // reset buffer
+        LogUtil.error('StreamClient', '❌ 解码失败', e, stackTrace);
+        _buffer.clear();
         return;
       }
     }
@@ -127,44 +158,38 @@ class StreamClient {
     }
   }
 
-  int _readUint32(Uint8List data, int offset) {
-    if (offset + 4 > data.length) throw Exception("Invalid uint32 read");
-    return data.buffer.asByteData().getUint32(offset, Endian.little);
-  }
-
-  int _readInt32(Uint8List data, int offset) {
-    if (offset + 4 > data.length) throw Exception("Invalid int32 read");
-    return data.buffer.asByteData().getInt32(offset, Endian.little);
-  }
-
+  /// 处理Socket错误
   void _onError(Object error) {
-    LogUtil.warning('IMClient', '⚠️ Socket error: $error');
+    LogUtil.warning('StreamClient', '⚠️ Socket错误: $error');
     _setStatus(ConnectionStatus.disconnected);
   }
 
+  /// 处理连接断开
   void _onDisconnected() {
-    LogUtil.info('IMClient', '🔌 Server disconnected');
+    LogUtil.info('StreamClient', '🔌 服务器断开连接');
     _setStatus(ConnectionStatus.disconnected);
-    _heartbeat.stop(); // 停止心跳
+    _heartbeat.stop();
   }
 
+  /// 更新连接状态
   void _setStatus(ConnectionStatus newStatus) {
     if (_status == newStatus) return;
     _status = newStatus;
     _connectionController.add(newStatus);
   }
 
+  /// 处理传入的消息
   void _handleIncomingMessage(ByteMessageType type, Uint8List payload) {
     try {
       switch (type) {
         case ByteMessageType.LoginRespMsgType:
           final msg = LoginRespMsg.fromBuffer(payload);
-          LogUtil.info('StreamClient', '🔑 Auth response received, success: ${msg.success}');
+          LogUtil.info('StreamClient', '🔑 认证响应收到, 成功: ${msg.success}');
           break;
 
         case ByteMessageType.LogoutRespMsgType:
           final msg = LogoutRespMsg.fromBuffer(payload);
-          LogUtil.info('StreamClient', '🚪 Logout response received');
+          LogUtil.info('StreamClient', '🚪 登出响应收到');
           break;
 
         case ByteMessageType.ACKMsgType:
@@ -173,27 +198,28 @@ class StreamClient {
           break;
 
         case ByteMessageType.HeartbeatMsgType:
-          LogUtil.debug('StreamClient', '💓 Heartbeat received');
+          LogUtil.debug('StreamClient', '💓 心跳包收到');
           break;
 
         default:
-          LogUtil.debug('StreamClient', '📦 Unhandled message: $type');
+          LogUtil.debug('StreamClient', '📦 未处理消息: $type');
       }
     } catch (e, stackTrace) {
-      LogUtil.error('StreamClient', '❌ Message process failed', e, stackTrace);
+      LogUtil.error('StreamClient', '❌ 消息处理失败', e, stackTrace);
     }
   }
 
   /// 发送 protobuf 消息
   void send(GeneratedMessage message) {
     if (_status != ConnectionStatus.connected) {
-      LogUtil.warning('IMClient', '🚫 无法发送消息: 未连接');
+      LogUtil.warning('StreamClient', '🚫 无法发送消息: 未连接');
       return;
     }
 
     try {
       final data = message.writeToBuffer();
-      final frame = encodeFramedMessage(_getMessageTypeValue(message), data);
+      final messageType = _getMessageTypeValue(message);
+      final frame = encodeFramedMessage(messageType, data);
 
       _channel.sink.add(Uint8List.fromList(frame));
       LogUtil.info('StreamClient', '📤 发送消息: ${message.runtimeType}');
@@ -206,7 +232,7 @@ class StreamClient {
   /// 发送原始数据
   void sendRaw(int messageType, Uint8List data, int messageId) {
     if (_status != ConnectionStatus.connected) {
-      LogUtil.warning('IMClient', '🚫 无法发送消息: 未连接');
+      LogUtil.warning('StreamClient', '🚫 无法发送消息: 未连接');
       return;
     }
 
@@ -222,19 +248,16 @@ class StreamClient {
 
   /// 根据消息类型获取对应的整数值
   int _getMessageTypeValue(GeneratedMessage message) {
-    // 这里需要根据具体的消息类型返回对应的整数值
-    // 这只是一个示例实现，实际应该根据你的协议定义来实现
     if (message is LoginReqMsg) {
-      return 2; // LoginReqMsgType
+      return ByteMessageType.LoginReqMsgType.value;
     } else if (message is LogoutReqMsg) {
-      return 4; // LogoutReqMsgType
+      return ByteMessageType.LogoutReqMsgType.value;
     } else if (message is HeartbeatMsg) {
-      return 1; // HeartbeatMsgType
+      return ByteMessageType.HeartbeatMsgType.value;
     }
-    // 添加更多消息类型...
 
     LogUtil.warning('StreamClient', '⚠️ 未知消息类型: ${message.runtimeType}');
-    return 0; // 默认值
+    return ByteMessageType.UNKNOWN_BYTE_MESSAGE_TYPE.value;
   }
 
   /// 等待特定类型的消息
@@ -246,12 +269,17 @@ class StreamClient {
     late StreamSubscription subscription;
 
     subscription = _messageController.stream
-        .where((entry) => entry.value is T)
-        .map((entry) => entry.value as T)
-        .where(predicate)
+        .where((entry) => _isMessageType<T>(entry.key))
+        .map((entry) => _parseMessage<T>(entry.value))
+        .where((msg) => predicate(msg))
         .listen((message) {
       completer.complete(message);
       subscription.cancel();
+    }, onError: (error) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+        subscription.cancel();
+      }
     });
 
     Future.delayed(timeout, () {
@@ -264,6 +292,27 @@ class StreamClient {
     return completer.future;
   }
 
+  /// 根据消息类型判断是否为目标类型
+  bool _isMessageType<T extends GeneratedMessage>(ByteMessageType type) {
+    if (T == LoginRespMsg) {
+      return type == ByteMessageType.LoginRespMsgType;
+    } else if (T == LogoutRespMsg) {
+      return type == ByteMessageType.LogoutRespMsgType;
+    }
+    return false;
+  }
+
+  /// 解析消息
+  T _parseMessage<T extends GeneratedMessage>(Uint8List data) {
+    if (T == LoginRespMsg) {
+      return LoginRespMsg.fromBuffer(data) as T;
+    } else if (T == LogoutRespMsg) {
+      return LogoutRespMsg.fromBuffer(data) as T;
+    }
+    throw Exception('不支持的消息类型');
+  }
+
+  /// 关闭连接
   Future<void> closeConnection() async {
     await disconnect();
   }

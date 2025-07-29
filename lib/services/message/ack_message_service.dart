@@ -289,7 +289,7 @@ class AckMessageService {
       );
 
       _updateMessage(updatedMsg);
-      LogUtil.info('AckMessageService', '✅ 消息已确认: $messageId');
+      LogUtil.warning('AckMessageService', '✅ 消息已确认: $messageId');
     } else {
       LogUtil.warning('AckMessageService', '⚠️ 尝试确认不存在的消息: $messageId');
     }

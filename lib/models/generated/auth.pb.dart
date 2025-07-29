@@ -129,12 +129,20 @@ class LoginRespMsg extends $pb.GeneratedMessage {
     $core.String? token,
     $fixnum.Int64? expiresAt,
     $core.bool? success,
+    $core.String? msg,
+    $core.String? uid,
+    $core.String? nickname,
+    $core.String? avatar,
   }) {
     final result = create();
     if (messageId != null) result.messageId = messageId;
     if (token != null) result.token = token;
     if (expiresAt != null) result.expiresAt = expiresAt;
     if (success != null) result.success = success;
+    if (msg != null) result.msg = msg;
+    if (uid != null) result.uid = uid;
+    if (nickname != null) result.nickname = nickname;
+    if (avatar != null) result.avatar = avatar;
     return result;
   }
 
@@ -148,6 +156,10 @@ class LoginRespMsg extends $pb.GeneratedMessage {
     ..aOS(2, _omitFieldNames ? '' : 'token')
     ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'expiresAt', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..aOB(4, _omitFieldNames ? '' : 'success')
+    ..aOS(5, _omitFieldNames ? '' : 'msg')
+    ..aOS(6, _omitFieldNames ? '' : 'uid')
+    ..aOS(7, _omitFieldNames ? '' : 'nickname')
+    ..aOS(8, _omitFieldNames ? '' : 'avatar')
     ..hasRequiredFields = false
   ;
 
@@ -203,6 +215,42 @@ class LoginRespMsg extends $pb.GeneratedMessage {
   $core.bool hasSuccess() => $_has(3);
   @$pb.TagNumber(4)
   void clearSuccess() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get msg => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set msg($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasMsg() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearMsg() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get uid => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set uid($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasUid() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearUid() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get nickname => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set nickname($core.String value) => $_setString(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasNickname() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearNickname() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.String get avatar => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set avatar($core.String value) => $_setString(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasAvatar() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearAvatar() => $_clearField(8);
 }
 
 /// ========================================

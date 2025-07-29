@@ -11,11 +11,17 @@ class ValidatorUtil {
     return emailRegex.hasMatch(value);
   }
 
-  /// 验证手机号（中国大陆）
+  /// 验证手机号（中国大陆 + 国际格式，支持 +86、+1 等 E.164）
   static bool isPhone(String? value) {
     if (value == null || value.isEmpty) return false;
-    final phoneRegex = RegExp(r'^1[3456789]\d{9}$');
-    return phoneRegex.hasMatch(value);
+
+    // 中国大陆手机号：11位，以 1 开头，第二位是 3~9
+    final chinaMobileRegex = RegExp(r'^1[3-9]\d{9}$');
+
+    // 国际手机号（E.164），以 + 开头，最多 15 位数字
+    final internationalRegex = RegExp(r'^\+?[1-9]\d{6,14}$');
+
+    return chinaMobileRegex.hasMatch(value) || internationalRegex.hasMatch(value);
   }
 
   /// 验证密码（至少6位）

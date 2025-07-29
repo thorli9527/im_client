@@ -1,21 +1,21 @@
 // 文件路径: lib/services/user_service.dart
 
 import 'dart:io';
+
 import 'package:fixnum/src/int64.dart';
-import 'package:riverpod/riverpod.dart';
-import 'package:im_client/models/system/login_response.dart';
-import 'package:im_client/services/api_service.dart';
-import 'package:im_client/services/app_config_service.dart';
-import 'package:im_client/services/message/ack_message_service.dart'; // 添加导入
 import 'package:im_client/channel/stream_client.dart';
 import 'package:im_client/config/app_config.dart';
-import 'package:im_client/utils/log_util.dart';
-import 'package:im_client/utils/time_util.dart';
-import 'package:im_client/utils/id_utils.dart';
 import 'package:im_client/models/generated/auth.pb.dart';
 import 'package:im_client/models/generated/common.pbenum.dart';
+import 'package:im_client/services/app_config_service.dart';
+import 'package:im_client/services/message/ack_message_service.dart'; // 添加导入
+import 'package:im_client/utils/id_utils.dart';
+import 'package:im_client/utils/log_util.dart';
+import 'package:riverpod/riverpod.dart';
 
+import '../models/api_response.dart';
 import '../models/system/system_config.dart';
+import '../utils/validator_util.dart';
 
 class UserService {
   final Ref _ref;
@@ -23,13 +23,25 @@ class UserService {
   UserService(this._ref);
 
   /// 使用Socket登录并保存认证信息
-  Future<LoginResponse> loginWithSocket({
-    required String username,
+  Future<ApiResponse> loginWithSocket({
+    required String authContent,
     required String password,
   }) async {
     try {
-      LogUtil.info('UserService', '🔐 开始Socket登录: $username');
-
+      LogUtil.info('UserService', '🔐 开始Socket登录: $authContent');
+      AuthType authType = AuthType.AUTH_TYPE_UNKNOWN;
+      bool isMail = ValidatorUtil.isEmail(authContent);
+      if (isMail) {
+        authType = AuthType.AUTH_TYPE_EMAIL;
+      } else {
+        if (ValidatorUtil.isPhone(authContent)) {
+          authType = AuthType.AUTH_TYPE_PHONE;
+        }
+      }
+      if (authType == AuthType.AUTH_TYPE_UNKNOWN) {
+        return ApiResponse(
+            code: 400, message: "请输入正确的邮箱或手机号", data: null, success: false);
+      }
       // 获取 StreamClient 和 AckMessageService
       final streamClient = _ref.read(streamClientProvider);
       final ackService = _ref.read(ackMessageServiceProvider);
@@ -44,20 +56,20 @@ class UserService {
       final loginReq = LoginReqMsg.create()
         ..messageId = Int64(messageId)
         ..authType = AuthType.AUTH_TYPE_EMAIL
-        ..authContent = username
+        ..authContent = authContent
         ..password = password
         ..deviceType = DeviceType.DESKTOP;
 
       // 将消息添加到ACK服务中
       await ackService.addPendingMessage(
-        messageId: messageId,
-        messageType: ByteMessageType.LoginReqMsgType.value,
-        originalData: loginReq.writeToBuffer(),
-      );
+          messageId: messageId,
+          messageType: ByteMessageType.LoginReqMsgType.value,
+          originalData: loginReq.writeToBuffer(),
+          persistent: false);
 
       // 等待登录响应
       final loginFuture = streamClient.waitForMessage<LoginRespMsg>(
-            (msg) => msg.messageId == Int64(messageId),
+        (msg) => msg.messageId == Int64(messageId),
         timeout: Duration(seconds: 15),
       );
 
@@ -68,32 +80,26 @@ class UserService {
       await ackService.markAsAcknowledged(messageId);
 
       if (!loginResp.success) {
-        throw Exception('登录失败');
+        throw Exception(loginResp.msg);
       }
 
-      // 创建LoginResponse对象
-      final loginResponse = LoginResponse(
-        token: loginResp.token,
-        username: username,
-        avatar: '', // 可根据实际需要从响应中获取
-      );
-
       // 保存登录状态
-      await _persistLoginState(loginResponse, username);
+      await _persistLoginState(loginResp, authType, authContent);
 
-      LogUtil.info('UserService', '✅ Socket登录成功: $username');
-      return loginResponse;
+      LogUtil.info('UserService', '✅ Socket登录成功: $authContent');
+      return ApiResponse(code: 200, success: true);
     } on SocketException catch (e) {
       LogUtil.error('UserService', '❌ Socket连接失败', e);
-      throw Exception('网络连接失败，请检查服务器是否运行在 ${AppConfig.socketHost}:${AppConfig.socketPort}');
+      throw Exception(
+          '网络连接失败，请检查服务器是否运行在 ${AppConfig.socketHost}:${AppConfig.socketPort}');
     }
   }
-
 
   /// 检查是否已登录
   Future<bool> isLoggedIn() async {
     final appConfigService = await _ref.read(appConfigServiceProvider.future);
-    final result = await appConfigService.getString(ConfigTypeEnum.LOGIN_STATUS);
+    final result =
+        await appConfigService.getString(ConfigTypeEnum.LOGIN_STATUS);
     return result.fold(
       (status) => status == 'true',
       (exception) => false,
@@ -112,8 +118,7 @@ class UserService {
       // 发送登出请求到服务器
       try {
         final messageId = IdUtils.buildSnowflake() as Int64;
-        final reqMsg = LogoutReqMsg.create()
-          ..messageId = messageId;
+        final reqMsg = LogoutReqMsg.create()..messageId = messageId;
 
         // 如果连接仍然有效，发送登出请求
         if (streamClient.status == ConnectionStatus.connected) {
@@ -166,15 +171,14 @@ class UserService {
 
   /// 保存登录状态
   Future<void> _persistLoginState(
-    LoginResponse login,
-    String username,
-  ) async {
+      LoginRespMsg login, AuthType authType, String authContent) async {
     final appConfigService = await _ref.read(appConfigServiceProvider.future);
 
     // 执行所有设置操作，不关心返回值
     await Future.wait([
       appConfigService.setString(ConfigTypeEnum.LOGIN_STATUS, "true"),
-      appConfigService.setString(ConfigTypeEnum.USER_NAME, username),
+      appConfigService.setString(ConfigTypeEnum.LOGIN_TYPE, authType.name),
+      appConfigService.setString(ConfigTypeEnum.LOGIN_CONTENT, authContent),
       appConfigService.setString(ConfigTypeEnum.TOKEN, login.token),
     ], eagerError: false);
   }
@@ -183,7 +187,7 @@ class UserService {
   Future<void> _clearLoginState(AppConfigService appConfigService) async {
     final keys = [
       ConfigTypeEnum.LOGIN_STATUS,
-      ConfigTypeEnum.USER_NAME,
+      ConfigTypeEnum.LOGIN_CONTENT,
       ConfigTypeEnum.TOKEN,
     ];
 

@@ -73,6 +73,10 @@ const LoginRespMsg$json = {
     {'1': 'token', '3': 2, '4': 1, '5': 9, '10': 'token'},
     {'1': 'expires_at', '3': 3, '4': 1, '5': 4, '10': 'expiresAt'},
     {'1': 'success', '3': 4, '4': 1, '5': 8, '10': 'success'},
+    {'1': 'msg', '3': 5, '4': 1, '5': 9, '10': 'msg'},
+    {'1': 'uid', '3': 6, '4': 1, '5': 9, '10': 'uid'},
+    {'1': 'nickname', '3': 7, '4': 1, '5': 9, '10': 'nickname'},
+    {'1': 'avatar', '3': 8, '4': 1, '5': 9, '10': 'avatar'},
   ],
 };
 
@@ -80,7 +84,8 @@ const LoginRespMsg$json = {
 final $typed_data.Uint8List loginRespMsgDescriptor = $convert.base64Decode(
     'CgxMb2dpblJlc3BNc2cSHQoKbWVzc2FnZV9pZBgBIAEoBFIJbWVzc2FnZUlkEhQKBXRva2VuGA'
     'IgASgJUgV0b2tlbhIdCgpleHBpcmVzX2F0GAMgASgEUglleHBpcmVzQXQSGAoHc3VjY2VzcxgE'
-    'IAEoCFIHc3VjY2Vzcw==');
+    'IAEoCFIHc3VjY2VzcxIQCgNtc2cYBSABKAlSA21zZxIQCgN1aWQYBiABKAlSA3VpZBIaCghuaW'
+    'NrbmFtZRgHIAEoCVIIbmlja25hbWUSFgoGYXZhdGFyGAggASgJUgZhdmF0YXI=');
 
 @$core.Deprecated('Use logoutReqMsgDescriptor instead')
 const LogoutReqMsg$json = {

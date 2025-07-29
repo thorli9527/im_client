@@ -113,20 +113,26 @@ P _systemConfigDeserializeProp<P>(
 const _SystemConfigconfigTypeEnumValueMap = {
   'LOGIN_STATUS': 0,
   'LOGIN_TYPE': 1,
-  'USER_NAME': 2,
+  'LOGIN_CONTENT': 2,
   'TOKEN': 3,
-  'TOKEN_EXPIRE_TIME': 4,
-  'THEME_MODE': 5,
-  'FIRST_START_TIME': 6,
+  'UID': 4,
+  'TOKEN_EXPIRE_TIME': 5,
+  'THEME_MODE': 6,
+  'FIRST_START_TIME': 7,
+  'NICKNAME': 8,
+  'AVATAR': 9,
 };
 const _SystemConfigconfigTypeValueEnumMap = {
   0: ConfigTypeEnum.LOGIN_STATUS,
   1: ConfigTypeEnum.LOGIN_TYPE,
-  2: ConfigTypeEnum.USER_NAME,
+  2: ConfigTypeEnum.LOGIN_CONTENT,
   3: ConfigTypeEnum.TOKEN,
-  4: ConfigTypeEnum.TOKEN_EXPIRE_TIME,
-  5: ConfigTypeEnum.THEME_MODE,
-  6: ConfigTypeEnum.FIRST_START_TIME,
+  4: ConfigTypeEnum.UID,
+  5: ConfigTypeEnum.TOKEN_EXPIRE_TIME,
+  6: ConfigTypeEnum.THEME_MODE,
+  7: ConfigTypeEnum.FIRST_START_TIME,
+  8: ConfigTypeEnum.NICKNAME,
+  9: ConfigTypeEnum.AVATAR,
 };
 
 Id _systemConfigGetId(SystemConfig object) {

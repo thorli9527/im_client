@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:im_client/shared/constants.dart';
 import 'package:im_client/shared/navigation_service.dart';
 import 'package:im_client/services/user_service.dart';
+import 'package:im_client/utils/validator_util.dart';
+import 'package:im_client/models/api_response.dart';
 
 import '../../components/auth_mode_toggle.dart';
 
@@ -17,13 +19,13 @@ class LoginForm extends ConsumerStatefulWidget {
 
 class _LoginFormState extends ConsumerState<LoginForm> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -37,21 +39,28 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       try {
         final userService = ref.read(userServiceProvider);
         final response = await userService.loginWithSocket(
-          username: _emailController.text.trim(),
+          authContent: _identifierController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
         if (mounted) {
-          // 登录成功，跳转到主界面
-          NavigationService.navigateToWelcome(context, replace: true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('登录成功')),
-          );
+          if (response.success) {
+            // 登录成功，跳转到主界面
+            NavigationService.navigateToWelcome(context, replace: true);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('登录成功')),
+            );
+          } else {
+            // 登录失败，显示错误信息
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('登录失败: ${response.message ?? "未知错误"}')),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('登录失败: $e')),
+            SnackBar(content: Text('登录过程中发生错误: $e')),
           );
         }
       } finally {
@@ -71,21 +80,24 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       child: Column(
         children: [
           TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
+            controller: _identifierController,
+            keyboardType: TextInputType.text,
             textInputAction: TextInputAction.next,
             cursorColor: kPrimaryColor,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return '请输入邮箱';
+                return '请输入邮箱或手机号';
               }
-              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                return '请输入有效的邮箱地址';
+
+              // 检查是否为有效的邮箱或手机号
+              if (!ValidatorUtil.isEmail(value) && !ValidatorUtil.isPhone(value)) {
+                return '请输入有效的邮箱或手机号';
               }
+
               return null;
             },
             decoration: const InputDecoration(
-              hintText: "Your email",
+              hintText: "邮箱或手机号",
               prefixIcon: Padding(
                 padding: EdgeInsets.all(defaultPadding),
                 child: Icon(Icons.person),

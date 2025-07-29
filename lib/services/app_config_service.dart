@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:isar/isar.dart';
+import '../models/generated/auth.pb.dart';
 import '../utils/log_util.dart';
 
 import '../models/system/system_config.dart';
@@ -121,20 +122,21 @@ class AppConfigService {
   String? get currentUsername => _currentUsername;
 
   /// 保存认证信息
-  Future<void> saveAuthInfo(String token, DateTime expireTime, String username) async {
+  Future<void> saveAuthInfo(LoginRespMsg respMsg,String loginContent, DateTime expireTime) async {
     try {
       await Future.wait([
-        setString(ConfigTypeEnum.TOKEN, token),
+        setString(ConfigTypeEnum.TOKEN, respMsg.token),
         setString(ConfigTypeEnum.TOKEN_EXPIRE_TIME, expireTime.millisecondsSinceEpoch.toString()),
-        setString(ConfigTypeEnum.USER_NAME, username),
+        setString(ConfigTypeEnum.LOGIN_CONTENT, loginContent),
+        setString(ConfigTypeEnum.NICKNAME, respMsg.nickname),
         setLoggedIn(true),
       ]);
 
-      _authToken = token;
+      _authToken = respMsg.token;
       _tokenExpireTime = expireTime;
-      _currentUsername = username;
+      _currentUsername = respMsg.nickname;
 
-      LogUtil.info('AppConfigService', '🔑 认证信息已保存: 用户名=$username');
+      LogUtil.info('AppConfigService', '🔑 认证信息已保存: 用户名=$respMsg.nickname');
     } catch (e) {
       LogUtil.error('AppConfigService', '❌ 保存认证信息失败', e);
       rethrow;
@@ -147,7 +149,7 @@ class AppConfigService {
       final results = await Future.wait([
         getString(ConfigTypeEnum.TOKEN),
         getString(ConfigTypeEnum.TOKEN_EXPIRE_TIME),
-        getString(ConfigTypeEnum.USER_NAME),
+        getString(ConfigTypeEnum.LOGIN_CONTENT),
       ], eagerError: false);
 
       // 处理令牌
@@ -189,7 +191,7 @@ class AppConfigService {
       await Future.wait([
         remove(ConfigTypeEnum.TOKEN),
         remove(ConfigTypeEnum.TOKEN_EXPIRE_TIME),
-        remove(ConfigTypeEnum.USER_NAME),
+        remove(ConfigTypeEnum.LOGIN_CONTENT),
         setLoggedIn(false),
       ], eagerError: false);
 

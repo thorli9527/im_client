@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+// 文件路径: lib/views/auth/login/login_screen.dart
 
-import '../../../responsive.dart';
-import '../components/background.dart';
-import '../components/desktop_background.dart';
-import 'components/login_form.dart';
-import 'components/login_screen_top_image.dart';
+import 'package:flutter/material.dart';
+import 'package:im_client/responsive.dart';
+import 'package:im_client/views/auth/components/background.dart';
+import 'package:im_client/views/auth/components/desktop_background.dart';
+import 'package:im_client/views/auth/login/components/login_form.dart';
+import 'package:im_client/views/auth/login/components/login_screen_top_image.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);

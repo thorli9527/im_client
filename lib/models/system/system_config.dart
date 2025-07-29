@@ -34,14 +34,20 @@ enum ConfigTypeEnum {
   LOGIN_STATUS,
   /// 登录方式（"email"/"phone"）
   LOGIN_TYPE,
-  /// 当前用户名（字符串）
-  USER_NAME,
+  /// 登录方式对应内容 （邮箱/手机号）
+  LOGIN_CONTENT,
   /// 用户TOKEN
   TOKEN,
+  /// 用户ID
+  UID,
   /// Token 过期时间
   TOKEN_EXPIRE_TIME,
   /// 主题模式
   THEME_MODE,
   /// 首次启动时间戳
   FIRST_START_TIME,
+  /// 用户昵称
+  NICKNAME,
+  /// 用户头像
+  AVATAR,
 }
