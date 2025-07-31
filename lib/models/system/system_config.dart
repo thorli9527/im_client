@@ -1,3 +1,4 @@
+// lib/models/system/system_config.dart
 import 'package:isar/isar.dart';
 
 part 'system_config.g.dart';
@@ -50,4 +51,6 @@ enum ConfigTypeEnum {
   NICKNAME,
   /// 用户头像
   AVATAR,
+  /// 设备ID
+  DEVICE_ID
 }

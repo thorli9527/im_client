@@ -1,11 +1,12 @@
+// lib/services/app_config_service.dart
 import 'package:flutter/material.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:isar/isar.dart';
-import '../models/generated/auth.pb.dart';
-import '../utils/log_util.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/system/system_config.dart';
 import 'database_service.dart';
+import '../utils/log_util.dart';
 
 /// 应用配置服务
 class AppConfigService {
@@ -14,6 +15,9 @@ class AppConfigService {
 
   /// 当前主题模式
   ThemeMode themeMode = ThemeMode.system;
+
+  /// 设备ID
+  String? _deviceId;
 
   /// 用户认证信息
   String? _authToken;
@@ -29,6 +33,7 @@ class AppConfigService {
     // 并行加载多个配置项以提高性能
     await Future.wait([
       _loadThemeMode(),
+      _loadDeviceId(), // 加载设备ID
       _loadAuthInfo(),
     ]);
 
@@ -37,6 +42,50 @@ class AppConfigService {
 
   /// 检查服务是否已初始化
   bool get isInitialized => _initialized;
+
+  // -------------------
+  // 设备ID管理
+  // -------------------
+
+  /// 获取设备ID
+  String? get deviceId => _deviceId;
+
+  /// 加载或生成设备ID
+  Future<void> _loadDeviceId() async {
+    try {
+      LogUtil.debug('AppConfigService', '📱 正在加载或生成设备ID...');
+      
+      final result = await getString(ConfigTypeEnum.DEVICE_ID);
+      result.fold(
+        (deviceId) {
+          _deviceId = deviceId;
+          LogUtil.info('AppConfigService', '📱 设备ID已加载: $_deviceId');
+        },
+        (exception) async {
+          // 如果没有设备ID，则生成一个新的
+          LogUtil.warning('AppConfigService', '⚠️ 未找到设备ID，正在生成新的设备ID...');
+          await _generateAndSaveDeviceId();
+        },
+      );
+    } catch (e) {
+      LogUtil.error('AppConfigService', '❌ 加载设备ID时出错', e);
+      // 出错时也生成一个新的
+      await _generateAndSaveDeviceId();
+    }
+  }
+
+  /// 生成并保存设备ID
+  Future<void> _generateAndSaveDeviceId() async {
+    try {
+      final newDeviceId = Uuid().v4();
+      await setString(ConfigTypeEnum.DEVICE_ID, newDeviceId);
+      _deviceId = newDeviceId;
+      LogUtil.info('AppConfigService', '✅ 新设备ID已生成并保存: $_deviceId');
+    } catch (e) {
+      LogUtil.error('AppConfigService', '❌ 生成或保存设备ID失败', e);
+      rethrow;
+    }
+  }
 
   // -------------------
   // 主题管理
@@ -122,7 +171,7 @@ class AppConfigService {
   String? get currentUsername => _currentUsername;
 
   /// 保存认证信息
-  Future<void> saveAuthInfo(LoginRespMsg respMsg,String loginContent, DateTime expireTime) async {
+  Future<void> saveAuthInfo(dynamic respMsg, String loginContent, DateTime expireTime) async {
     try {
       await Future.wait([
         setString(ConfigTypeEnum.TOKEN, respMsg.token),
@@ -136,7 +185,7 @@ class AppConfigService {
       _tokenExpireTime = expireTime;
       _currentUsername = respMsg.nickname;
 
-      LogUtil.info('AppConfigService', '🔑 认证信息已保存: 用户名=$respMsg.nickname');
+      LogUtil.info('AppConfigService', '🔑 认证信息已保存: 用户名=${respMsg.nickname}');
     } catch (e) {
       LogUtil.error('AppConfigService', '❌ 保存认证信息失败', e);
       rethrow;
@@ -192,6 +241,7 @@ class AppConfigService {
         remove(ConfigTypeEnum.TOKEN),
         remove(ConfigTypeEnum.TOKEN_EXPIRE_TIME),
         remove(ConfigTypeEnum.LOGIN_CONTENT),
+        remove(ConfigTypeEnum.NICKNAME),
         setLoggedIn(false),
       ], eagerError: false);
 
@@ -220,15 +270,13 @@ class AppConfigService {
   // -------------------
 
   /// 检查是否为首次启动
-// 修改 isFirstLaunch 方法
-  /// 检查是否为首次启动
   Future<bool> isFirstLaunch() async {
     LogUtil.debug('AppConfigService', '🆕 检查是否为首次启动');
     try {
       final result = await getString(ConfigTypeEnum.FIRST_START_TIME);
       return result.fold(
-            (content) => false, // 如果存在时间戳，则不是首次启动
-            (exception) {
+        (content) => false, // 如果存在时间戳，则不是首次启动
+        (exception) {
           LogUtil.warning('AppConfigService', '⚠️ 检查首次启动状态失败', exception);
           return true;
         },
@@ -275,12 +323,29 @@ class AppConfigService {
   /// 设置指定配置项的值
   Future<void> setString(ConfigTypeEnum key, String value) async {
     try {
-      final config = SystemConfig()
+      LogUtil.debug('AppConfigService', '💾 准备保存配置: ${key.name} = $value');
+
+      // 先查找是否已存在该配置项
+      final existingConfig = await _getConfig(key);
+
+      final config = existingConfig ?? SystemConfig()
         ..configType = key
         ..content = value;
 
-      await _isar.writeTxn(() => _isar.systemConfigs.put(config));
-      LogUtil.info('AppConfigService', '💾 保存配置: ${key.name} = $value');
+      // 如果配置已存在，更新内容
+      if (existingConfig != null) {
+        config.content = value;
+        LogUtil.debug('AppConfigService', '🔄 更新现有配置: ${key.name}');
+      } else {
+        LogUtil.debug('AppConfigService', '🆕 创建新配置: ${key.name}');
+      }
+
+      // 执行保存操作
+      await _isar.writeTxn(() async {
+        await _isar.systemConfigs.put(config);
+      });
+
+      LogUtil.info('AppConfigService', '✅ 保存配置成功: ${key.name} = $value');
     } catch (e) {
       LogUtil.error('AppConfigService', '❌ 保存配置失败: ${key.name}', e);
       rethrow;
@@ -320,7 +385,6 @@ class AppConfigService {
     }
   }
 
-  /// 解析主题模式
   ThemeMode _parseThemeMode(String? modeStr) {
     switch (modeStr) {
       case 'dark':
@@ -333,7 +397,6 @@ class AppConfigService {
     }
   }
 
-  /// 将主题模式转换为字符串
   String _themeModeToString(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.dark:
@@ -371,15 +434,8 @@ extension ResultExtension<T> on Result<T> {
 
 /// Riverpod provider for AppConfigService
 final appConfigServiceProvider = FutureProvider<AppConfigService>((ref) async {
-  LogUtil.info('AppConfigServiceProvider', '🔄 正在创建 AppConfigService...');
-  try {
-    final databaseService = await ref.watch(databaseServiceAsyncProvider.future);
-    final appConfigService = AppConfigService();
-    await appConfigService.init(databaseService.db);
-    LogUtil.info('AppConfigServiceProvider', '✅ AppConfigService 创建完成');
-    return appConfigService;
-  } catch (e) {
-    LogUtil.error('AppConfigServiceProvider', '❌ AppConfigService 创建失败', e);
-    rethrow;
-  }
+  final databaseService = await ref.watch(databaseServiceAsyncProvider.future);
+  final appConfigService = AppConfigService();
+  await appConfigService.init(databaseService.db);
+  return appConfigService;
 });

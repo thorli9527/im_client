@@ -52,7 +52,7 @@ class UserService {
       }
 
       // 创建登录请求消息，使用雪花ID
-      final messageId = IdUtils.buildSnowflake();
+      final messageId = await IdUtils.buildSnowflake();
       final loginReq = LoginReqMsg.create()
         ..messageId = Int64(messageId)
         ..authType = AuthType.AUTH_TYPE_EMAIL
@@ -65,6 +65,7 @@ class UserService {
           messageId: messageId,
           messageType: ByteMessageType.LoginReqMsgType.value,
           originalData: loginReq.writeToBuffer(),
+          maxRetries: 0,
           persistent: false);
 
       // 等待登录响应

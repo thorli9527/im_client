@@ -1,3 +1,4 @@
+// lib/shared/navigation_service.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,7 +21,16 @@ class NavigationService {
 
   static void navigateToWelcome(BuildContext context, {bool replace = false}) {
     if (replace) {
-      context.go('/');
+      context.go('/welcome');
+    } else {
+      context.push('/welcome');
+    }
+  }
+
+  // 添加导航到主界面的方法
+  static void navigateToMain(BuildContext context, {bool replace = false}) {
+    if (replace) {
+      context.go('/'); // 主界面路由
     } else {
       context.push('/');
     }

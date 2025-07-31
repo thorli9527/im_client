@@ -121,6 +121,7 @@ const _SystemConfigconfigTypeEnumValueMap = {
   'FIRST_START_TIME': 7,
   'NICKNAME': 8,
   'AVATAR': 9,
+  'DEVICE_ID': 10,
 };
 const _SystemConfigconfigTypeValueEnumMap = {
   0: ConfigTypeEnum.LOGIN_STATUS,
@@ -133,6 +134,7 @@ const _SystemConfigconfigTypeValueEnumMap = {
   7: ConfigTypeEnum.FIRST_START_TIME,
   8: ConfigTypeEnum.NICKNAME,
   9: ConfigTypeEnum.AVATAR,
+  10: ConfigTypeEnum.DEVICE_ID,
 };
 
 Id _systemConfigGetId(SystemConfig object) {

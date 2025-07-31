@@ -46,7 +46,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         if (mounted) {
           if (response.success) {
             // 登录成功，跳转到主界面
-            NavigationService.navigateToWelcome(context, replace: true);
+            NavigationService.navigateToMain(context, replace: true);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('登录成功')),
             );
